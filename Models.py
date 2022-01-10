@@ -1,3 +1,4 @@
+from inspect import modulesbyfile
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
@@ -29,16 +30,16 @@ class models(object):
         
         
         def covid(freq, S21):
-            S21_min = np.mean(S21)
-            S21_max = max(S21)
+            self.S21_min = np.mean(S21)
+            self.S21_max = max(S21)
         
-            S21 = np.maximum(S21, S21_min)
+            S21 = np.maximum(S21, self.S21_min)
             
             
             cov = np.zeros_like(freq)
             counter = 0
             for i in range(2, len(freq)):
-                lolo = self.lorentzian(freq, freq[i])*(S21_max - S21_min) + S21_min
+                lolo = self.lorentzian(freq, freq[i])*(self.S21_max - self.S21_min) + self.S21_min
                 cov[i] = np.cov(S21, lolo)[0, 1]
                 
                 if cov[i-2] < cov[i-1] > cov[i]:
@@ -56,7 +57,8 @@ class models(object):
             
         
         print(self.freq_c)    
-        plt.plot(freq, S21_first, freq, S21_last, freq, self.lorentzian(freq, self.freq_c))
+        plt.plot(freq, S21_first, freq, S21_last, freq, self.lorentzian(freq, self.freq_c)*\
+            (self.S21_max - self.S21_min) + self.S21_min)
         plt.show()
         
     
@@ -68,7 +70,7 @@ class models(object):
         np.seterr(all='warn')
         warnings.filterwarnings('error')
         Ms = 0.176
-        gamma = 28  
+        gamma = 28
                 
                 
         def f_func(x, y, z):
@@ -119,6 +121,8 @@ class models(object):
         a = 0.25
         b = 3
         c = 2
+        np.seterr(all='warn')
+        warnings.filterwarnings('error')
         
         gamma = 28
         Ms = 0.176
@@ -150,14 +154,22 @@ class models(object):
         
         for i in range(len(H)):
             freq_ell = (abs(H[i]) + Nxx*Ms)*(abs(H[i]) + Nyy*Ms)
-            freq_FMR[i] = gamma*np.sqrt(freq_ell - ((Nxy + Nyx)*Ms)**2)
+            try:
+                freq_FMR[i] = gamma*np.sqrt(freq_ell - ((Nxy + Nyx)*Ms)**2)
+            except RuntimeWarning:
+                freq_FMR[i] = 0.
+                
+                
             
             delta = (self.freq_c**2 - freq_FMR[i]**2)**2/4 + 4*self.freq_c*freq_FMR[i]*g**2
             freq_av = (self.freq_c**2 + freq_FMR[i]**2)/2
 
             # Hybridized frequencies, superior frenquency (freq_s) and inferior frequency (freq_i)
             freq_s[i] = np.sqrt(freq_av + np.sqrt(delta))
-            freq_i[i] =  np.sqrt(freq_av - np.sqrt(delta))
+            try:
+                freq_i[i] =  np.sqrt(freq_av - np.sqrt(delta))
+            except RuntimeWarning:
+                freq_i[i] = np.nan
         return freq_s, freq_i, freq_FMR, self.freq_c
 
 
@@ -230,7 +242,8 @@ if __name__ == '__main__':
     f = f_table[f_name]
     
     
-    models().search_freq_c(f, [S210[0], S210[-1]])
+    model = models()
+    model.search_freq_c(f, [S210[0], S210[-1]])
     
     
     # Meshgrid for a colormap
@@ -254,7 +267,7 @@ if __name__ == '__main__':
     
     plt.show()
     """
-    popt, pcov = scp.curve_fit(models().slab_model_3D, pos, S21, bounds=(0, 2), maxfev=600)
+    popt, pcov = scp.curve_fit(model.slab_model_3D, pos, S21, bounds=(0, 2), maxfev=600)
     print(popt)
     
     fig, ax = plt.subplots(2, 1)
@@ -266,7 +279,7 @@ if __name__ == '__main__':
     cb.ax.set_title('S\u2082\u2081 [dB]')
     
     
-    S21_test2 = models().slab_model_3D(pos, 0.68)
+    S21_test2 = model.slab_model_3D(pos, popt)
     S21_test2 = S21_test2.reshape(len(Hg0), len(Hg0[0]))
     
     im = ax[1].pcolormesh(Hg0, freqg0, S21_test2, cmap='hot', vmin=-80, vmax = -20, shading='auto')
@@ -278,8 +291,6 @@ if __name__ == '__main__':
 
     plt.show()
     
-    g = 0.65
-    
     fig, ax = plt.subplots()
     im = ax.pcolormesh(Hg0, freqg0, S210, cmap='hot', vmin=-100, vmax = -20, shading='auto')
     ax.set_xlabel('Magnetic Field [T]', fontsize=20)
@@ -289,7 +300,7 @@ if __name__ == '__main__':
     cb.ax.tick_params(labelsize=15) 
     
     
-    over2 = models().slab_model_2D(H, g)
+    over2 = model.slab_model_2D(H, popt)
     ax.plot(H, over2[0], 'g', H, over2[1], 'g', H, over2[2], 'g--',\
         [H[0], H[-1]], [over2[3], over2[3]], 'g--', lw=1)
     
