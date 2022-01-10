@@ -296,6 +296,5 @@ if __name__ == '__main__':
     
     ax.set_ylim(f[0], f[-1])
     ax.tick_params(axis='both', which='major', labelsize=15)
-    print("Hello")
     
     plt.show()
