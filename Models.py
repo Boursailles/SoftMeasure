@@ -4,59 +4,97 @@ import matplotlib.pyplot as plt
 import csv
 import pandas as pd 
 import scipy.optimize as scp
+from scipy.signal import savgol_filter
 import warnings
 
 
 
 
-#***************************************************************************************************************#
+#******************************************************************************************************#
 # This program is working with Interface.py file for SoftMeasure.
 # It contains physics models of the photon-magnon hybridization and fit functions
-#***************************************************************************************************************#
+#******************************************************************************************************#
 
 
 
 
 class models(object):
-    # Contains physics models of the photon-magnon hybridization and fit functions
+    """
+    Contains physics models of the photon-magnon hybridization, fit functions, and Q-factor calculation
+    """
+    
     def __init__(self):
-        self.freq_c =None
+        self.freq_c = None
         
-        self.len_x = 3001
-        self.len_y = 1401
-        self.S_max = -35
-        self.S_min = -100
         
     
-
-    def lorentzian(self, x, x0):
-        # Lorentzian equation which permits to imitate S21 parameter
-        return 1/(1 + 4*(x - x0)**2/0.01)
+    def lorentzian(self, x, x0, sigma):
+        """
+        Lorentzian equation which permits to imitate S21 parameter
+        
+        Parameters
+        ----------
+        x: 1D-array
+        
+        x0: float
+        
+        sigma: float
+        
+        Returns
+        ----------
+        1D-array
+            Lorentzian curve
+        """
+        return 1/(1 + (2*(x - x0)/sigma)**2)
     
     
     
     def search_freq_c(self, freq, S21):
-        # Method taking freq values and 2 columns array, each being S21 values for H=max and H=0
-        # Return the frequence of the cavity
+        """
+        Method which permits to find out the cavity frequency (BM) with doing an average
+        on two sets (for two different H values) of S21 values with respect to the frequency
+        
+        Parameters
+        ----------
+        freq: 1D-array
+        
+        S21: 2D-array
+            Each dimension is a 1D-array of S21 values for Hmax and H = 0 respectively
+        """
+        
         S21_first = S21[0]
         S21_last = S21[1]
         
         
         def covid(freq, S21):
-            # Function returning the frequence of the cavity
-            # Using the covariance of the S21(freq) curve with a Lorentzian
-            # Permits to exhibit DM and BM modes with reducing the noise
+            """
+            Function which permits to find out the cavity frequency (BM) using covariance method.
+            This method permits to reduce the noise and show better peak modes
+
+            Parameters
+            ----------
+            freq: 1D-array
             
+            S21: 1D-array
+            
+            Returns
+            ----------
+            float
+                Cavity frequency, BM mode
+            """
+            
+            # Suppress S21 values below the average of S21 values for a better fit
             self.S21_min = min(S21)
             self.S21_max = max(S21)
         
             S21 = np.maximum(S21, np.mean(S21)) - np.mean(S21)
             
             
+            # Using covariance of S21 curve with lorentzian function
             cov = np.zeros_like(freq)
             counter = 0
             for i in range(2, len(freq)):
-                lolo = self.lorentzian(freq, freq[i])*abs(self.S21_max - self.S21_min)
+                lolo = self.lorentzian(freq, freq[i], 0.1)*abs(self.S21_max - self.S21_min)
                 cov[i] = np.cov(S21, lolo)[0, 1]
                 if cov[i-2] < cov[i-1] > cov[i] and\
                     (abs(cov[i-1] - cov[i-2]) > 4e-4 or abs(cov[i-1] - cov[i]) > 4e-4):
@@ -66,22 +104,208 @@ class models(object):
                         counter += 1
                     else:
                         # This is a BM mode, the frequency of the cavity which interests us
-                        return freq[i-1]
-                    
+                        return freq[i]
+        
+        
         freq_c_first = covid(freq, S21_first)
+        Q_values = self.calc_Q_factor(freq, freq_c_first, S21_first)
+        
+        Q_factor_first, freq_c_first, sigma, S21max, S21min, freq_gap, idx_min, idx_max = Q_values
+        
+        
+        params = {'mathtext.default': 'regular' }
+        plt.rcParams.update(params)
+        
+        plt.plot(freq[idx_min:idx_max], S21_first[idx_min:idx_max], 'o', label='Measured transmission')
+        
+        freq_fit = np.linspace(freq[idx_min], freq[idx_max], 5000)
+        plt.plot(freq_fit, self.lorentzian(freq_fit, freq_c_first, sigma)*(S21max - S21min) + S21min,\
+            label='Fitted transmission')
+        
+        plt.arrow(freq_c_first-freq_gap, S21max-3, 2*freq_gap, 0, length_includes_head = True,\
+            linewidth = 1, head_width=0.06, head_length=0.002, color='k')
+        plt.arrow(freq_c_first+freq_gap, S21max-3, -2*freq_gap, 0, length_includes_head = True,\
+            linewidth = 1, head_width=0.06, head_length=0.002, color='k')
+        plt.annotate('$\Delta f_{-3dB}$'+f' = {round(2*freq_gap, 3)} GHz',\
+            (freq_c_first-0.008, S21max-3+0.1), fontsize=30)
+        
+        plt.annotate(f'Q = {int(Q_factor_first)}',\
+            (freq[idx_min], S21max-0.1), fontsize=30)
+        
+        plt.xlabel('Frequency [GHz]', fontsize=30)
+        plt.ylabel('$S_{21}$ [dB]', fontsize=30)
+        plt.tick_params(axis='both', which='major', labelsize=30)
+        
+        plt.legend(prop={'size': 30})
+        
+        
         freq_c_last = covid(freq, S21_last)
+        freq_c_last = self.calc_Q_factor(freq, freq_c_last, S21_last)[1]
         
         # Average of the two BM modes found out for each H values
         self.freq_c = (freq_c_first + freq_c_last)/2
         
-    
         
-    def slab_model_3D(self, pos, g):
-        # Rectangular prism model
-        # Take a 2D list of all freq and H associated values (pos), and the strentgh coupling (g)
-        # Example for pos: [[1, 1, 1, 2, 2, 2], [0, 0.1, 0.2, 0, 0.1, 0.2]]\
-        # for 2 freq points equal to 1 and 2 and 3 H points equal to 0.1, 0.2, and 0.3
-        # Return the artificial S21 parameters for each f and H values in 1D array
+        
+    def calc_Q_factor(self, freq, freq_c, S21):
+        """
+        Method which permits to find out the accurate cavity frequency (BM) and to calculate
+        the quality factor
+
+        Parameters
+        ----------
+        freq: 1D-array
+            
+        freq_c: float
+        
+        S21: 1D-array
+            
+        Returns
+        ----------
+        Q_factor: float
+        
+        freq_c: float
+        
+        sigma: float
+        
+        S21max: float
+            Maximum value of S21 fitted
+            
+        S21min: float
+            Minimum value of S21 fitted
+            
+        freq_gap: float
+            Full Width at Half Maximum
+            
+        idx_min: float
+            Minimum index of the crossed curve
+            
+        idx_max: float
+            Maximum index of the crossed curve
+        """
+        
+        def find_nearest(array, value):
+            """
+            Function finding out the index of the nearest value of the setting one in a list
+
+            Parameters
+            ----------
+            array: 1D-array
+                
+            value: float
+                            
+            Returns
+            ----------
+            idx: int
+            """
+            
+            array = np.asarray(array)
+            idx = (np.abs(array - value)).argmin()
+            return idx
+        
+        
+        idx = find_nearest(freq, freq_c)
+        S21_mean = np.mean(S21)
+        
+        
+        # Keep curve piece where S21 values are decreased less than 4 dB with respect to the peak
+        for i in range(idx, len(freq)):
+            if S21[idx] - S21[i] > 4:
+                idx_max = i
+                break
+            
+        for i in range(idx, 0, -1):
+            if S21[idx] - S21[i] > 4:
+                idx_min = i
+                break
+        
+        idx_mean = max(abs(idx - idx_min), abs(idx - idx_max))
+        idx_min = idx - idx_mean
+        idx_max = idx + idx_mean
+        
+        
+        def S21_artificial(x, freq_c, sigma, S21max, S21min):
+            """
+            Function modelizing S21 curve with lorentzian formula
+
+            Parameters
+            ----------
+            x: 1D-array
+                
+            freq_c: float
+            
+            sigma: float
+            
+            S21max: float
+            
+            S21min: float
+                            
+            Returns
+            ----------
+            S21: 1D-array
+            """
+            
+            return self.lorentzian(x, freq_c, sigma)*(S21max - S21min) + S21min
+        
+        
+        popt, pcov = scp.curve_fit(S21_artificial, freq[idx_min:idx_max], S21[idx_min:idx_max],\
+            p0=(freq_c, 0.08, S21[idx], S21[idx_min]))
+        
+        freq_c = popt[0]
+        
+        
+        def inversed_lorentzian(S21_3dB, sigma, S21max, S21min):
+            """
+            Inversed lorentzian equation which permits to find out the frequency gap from cavity frequency
+            for an input S21 value
+            
+            Parameters
+            ----------
+            S21: float
+            
+            x0: float
+            
+            Returns
+            ----------
+            float
+                Associated frequency
+            """
+            return abs(np.sqrt(((S21max - S21min)/(S21_3dB - S21min) - 1))/2*sigma)
+        
+        
+        freq_gap = inversed_lorentzian(popt[2]-3, *popt[1:])
+        Q_factor = freq_c/freq_gap
+        
+        return Q_factor, *popt, freq_gap, idx_min, idx_max
+        
+    
+      
+    def Slab_model_3D(self, pos, g):
+        """
+        Rectangular prism model
+        
+        Parameters
+        ----------
+        pos: 2D-array
+            First 1D-array contains frequency values for each H values in the second 1D-array
+            
+        g: float
+            Strentgh coupling value
+            
+        Returns
+        ----------
+        S21: 1D-array
+            Transmission values for each freq and H values
+            
+        Example
+        ----------
+        pos = [[1, 1, 1, 2, 2, 2], [0, 0.1, 0.2, 0, 0.1, 0.2]]
+        
+        g = float
+        
+        The function could return:\n\
+            slab_model_3D(pos, g) =[-140.278, -130.97, -40.9, -46., -131.2, -143.5]
+        """
         
         # Prism dimensions
         a = 0.25
@@ -95,28 +319,22 @@ class models(object):
         
         np.seterr(all='warn')
         warnings.filterwarnings('error')
-                
-                
-        def f_func(x, y, z):
-            # Function from the rectangular prism model
-            return (np.sqrt(x*x + y*y + z*z)*z)/(x*y)
+            
             
         # Diagonal components of the demagnetizing tensor
-        Nzz = 2/(np.pi)*np.arctan(1/f_func(a, b, c))
-        Nxx = 2/(np.pi)*np.arctan(1/f_func(c, b, a))
-        Nyy = 2/(np.pi)*np.arctan(1/f_func(a, c, b))
-                
-                
-        def G_func(x, y, z):
-            # Function from the rectangular prism model
-            return z + np.sqrt(x*x + y*y + z*z)
+        Nzz = 2/(np.pi)*np.arctan(1/self.f_func(a, b, c))
+        Nxx = 2/(np.pi)*np.arctan(1/self.f_func(c, b, a))
+        Nyy = 2/(np.pi)*np.arctan(1/self.f_func(a, c, b))
+            
             
         # Off-diagonal components of the demagnetizing tensor
-        Nxy = - 1/(4*np.pi)*np.log((G_func(a, b, c)*G_func(-a, -b, c)*G_func(-a, b, -c)*G_func(a, -b, -c))/\
-            (G_func(-a, b, c)*G_func(a, -b, c)*G_func(a, b, -c)*G_func(a, b, c)))
+        Nxy = - 1/(4*np.pi)*np.log((self.G_func(a, b, c)*self.G_func(-a, -b, c)*\
+            self.G_func(-a, b, -c)*self.G_func(a, -b, -c))/(self.G_func(-a, b, c)*\
+                self.G_func(a, -b, c)*self.G_func(a, b, -c)*self.G_func(a, b, c)))
                 
-        Nyx = - 1/(4*np.pi)*np.log((G_func(b, a, c)*G_func(-b, -a, c)*G_func(-b, a, -c)*G_func(b, -a, -c))/\
-            (G_func(-b, a, c)*G_func(b, -a, c)*G_func(b, a, -c)*G_func(b, a, c)))
+        Nyx = - 1/(4*np.pi)*np.log((self.G_func(b, a, c)*self.G_func(-b, -a, c)*\
+            self.G_func(-b, a, -c)*self.G_func(b, -a, -c))/(self.G_func(-b, a, c)*\
+                self.G_func(b, -a, c)*self.G_func(b, a, -c)*self.G_func(b, a, c)))
             
             
         result = [0]*self.len_x
@@ -141,17 +359,42 @@ class models(object):
             freq_i = 0.5*(freq_av - np.sqrt(delta))
             
             # Imitating S21 parameters with lorentzian centered on f+ and f- values
-            result[i] = (self.lorentzian(pos[i*self.len_y: (1 + i)*self.len_y, 1], freq_s)+\
-            self.lorentzian(pos[i*self.len_y: (1 + i)*self.len_y, 1], freq_i))*(self.S_max - self.S_min) + self.S_min
+            result[i] = (self.lorentzian(pos[i*self.len_y: (1 + i)*self.len_y, 1], freq_s, 0.1)+\
+            self.lorentzian(pos[i*self.len_y: (1 + i)*self.len_y, 1], freq_i, 0.1))*(self.S_max - self.S_min) + self.S_min
         
         return np.ravel(result)
 
 
 
-    def slab_model_2D(self, H, g):
-        # Rectangular prism model
-        # H values, and the strentgh coupling (g)
-        # Return values of f+, f-, and freq_FMR for each H value, freq_c and H value at freq_FMR = freq_c
+    def Slab_model_2D(self, H, g):
+        """
+        Rectangular prism model
+        
+        Parameters
+        ----------
+        H: 1D-array
+            Magnetic field values
+            
+        g: float
+            Strentgh coupling value
+            
+        Returns
+        ----------
+        freq_s: float
+            Superior hybridized frequency
+            
+        freq_i: float
+            Inferior hybridized frequency
+            
+        freq_FMR: 1D-array:
+            Ferromagnetic resonance frequency for each H values
+            
+        self.freq_c: float
+            Cavity frequency
+            
+        H_cross: float
+            H_value at freq_FMR = self.freq_c
+        """
         
         # Prism dimensions
         a = 0.25
@@ -166,27 +409,21 @@ class models(object):
         np.seterr(all='warn')
         warnings.filterwarnings('error')
         
-            
-        def f_func(x, y, z):
-            # Function from the rectangular prism model
-            return (np.sqrt(x*x + y*y + z*z)*z)/(x*y)
                 
         # Diagonal components of the demagnetizing tensor
-        Nzz = 2/(np.pi)*np.arctan(1/f_func(a, b, c))
-        Nxx = 2/(np.pi)*np.arctan(1/f_func(c, b, a))
-        Nyy = 2/(np.pi)*np.arctan(1/f_func(a, c, b))
+        Nzz = 2/(np.pi)*np.arctan(1/self.f_func(a, b, c))
+        Nxx = 2/(np.pi)*np.arctan(1/self.f_func(c, b, a))
+        Nyy = 2/(np.pi)*np.arctan(1/self.f_func(a, c, b))
           
-          
-        def G_func(x, y, z):
-            # Function from the rectangular prism model
-            return z + np.sqrt(x*x + y*y + z*z)
         
         # Off-diagonal components of the demagnetizing tensor
-        Nxy = - 1/(4*np.pi)*np.log((G_func(a, b, c)*G_func(-a, -b, c)*G_func(-a, b, -c)*G_func(a, -b, -c))/\
-            (G_func(-a, b, c)*G_func(a, -b, c)*G_func(a, b, -c)*G_func(a, b, c)))
+        Nxy = - 1/(4*np.pi)*np.log((self.G_func(a, b, c)*self.G_func(-a, -b, c)*\
+            self.G_func(-a, b, -c)*self.G_func(a, -b, -c))/(self.G_func(-a, b, c)*\
+                self.G_func(a, -b, c)*self.G_func(a, b, -c)*self.G_func(a, b, c)))
                 
-        Nyx = - 1/(4*np.pi)*np.log((G_func(b, a, c)*G_func(-b, -a, c)*G_func(-b, a, -c)*G_func(b, -a, -c))/\
-            (G_func(-b, a, c)*G_func(b, -a, c)*G_func(b, a, -c)*G_func(b, a, c)))
+        Nyx = - 1/(4*np.pi)*np.log((self.G_func(b, a, c)*self.G_func(-b, -a, c)*\
+            self.G_func(-b, a, -c)*self.G_func(b, -a, -c))/(self.G_func(-b, a, c)*\
+                self.G_func(b, -a, c)*self.G_func(b, a, -c)*self.G_func(b, a, c)))
         
         
         freq_s = np.zeros_like(H)
@@ -213,22 +450,41 @@ class models(object):
             
             
         # Research of |H| (H_cross) value at f_FMR = f_c
-        delta_cross = ((Nxx - Nyy)**2 + 4*(Nxy + Nyx)**2)*Ms**2 - (self.freq_c/gamma)**2
-        H_av = (Nxx + Nyy)*Ms
+        delta_cross = ((Nxx - Nyy)**2 + 4*(Nxy + Nyx)**2)*Ms**2 + 4*(self.freq_c/gamma)**2
+        H_av = -(Nxx + Nyy)*Ms
                 
-        H_cross = 0.5*(H_av + np.sqrt(abs(delta_cross)))
-            
+        H_cross = 0.5*(H_av + np.sqrt(delta_cross))
+        
         return freq_s, freq_i, freq_FMR, self.freq_c, H_cross
 
 
-
         
-    def sphere_model_3D(self, pos, g):
-        # Sphere model
-        # Take a 2D list of all freq and H associated values (pos), and the strentgh coupling (g)
-        # Example for pos: [[1, 1, 1, 2, 2, 2], [0, 0.1, 0.2, 0, 0.1, 0.2]]\
-        # for two freq points equal to 1 and 2 and three H points equal to 0.1, 0.2, and 0.3
-        # Return the artificial S21 parameters for each f and H values in 1D array
+    def Sphere_model_3D(self, pos, g):
+        """
+        Sphere model
+        
+        Parameters
+        ----------
+        pos: 2D-array
+            First 1D-array contains frequency values for each H values in the second 1D-array
+        
+        g: float
+            Strentgh coupling value
+            
+        Returns
+        ----------
+        S21: 1D-array
+            Transmission values for each freq and H values
+            
+        Example
+        ----------
+        pos = [[1, 1, 1, 2, 2, 2], [0, 0.1, 0.2, 0, 0.1, 0.2]]
+        
+        g = float
+        
+        The function could return:\n\
+            sphere_model_3D(pos, g) = [-140.278, -130.97, -40.9, -46., -131.2, -143.5]
+        """
         
         # Ferrimagnetic parameters (default: YIG)
         Ms = 0.176
@@ -250,17 +506,42 @@ class models(object):
             freq_s = 0.5*(freq_av + np.sqrt(delta))
             freq_i = 0.5*(freq_av - np.sqrt(delta))
             
-            result[i] = (self.lorentzian(pos[i*self.len_y:(1 + i)*self.len_y, 1], freq_s)+\
-            self.lorentzian(pos[i*self.len_y:(1 + i)*self.len_y, 1], freq_i))*(self.S_max - self.S_min) + self.S_min
+            result[i] = (self.lorentzian(pos[i*self.len_y:(1 + i)*self.len_y, 1], freq_s, 0.1)+\
+            self.lorentzian(pos[i*self.len_y:(1 + i)*self.len_y, 1], freq_i, 0.1))*(self.S_max - self.S_min) + self.S_min
         
         return np.ravel(result)
         
         
         
-    def sphere_model_2D(self, H, g):
-        # Sphere model
-        # H values, and the strentgh coupling (g)
-        # Return values of f+, f-, and freq_FMR for each H value, freq_c and H value at freq_FMR = freq_c
+    def Sphere_model_2D(self, H, g):
+        """
+        Sphere model
+        
+        Parameters
+        ----------
+        H: 1D-array
+            Magnetic field values
+            
+        g: float
+            Strentgh coupling value
+            
+        Returns
+        ----------
+        freq_s: float
+            Superior hybridized frequency
+            
+        freq_i: float
+            Inferior hybridized frequency
+            
+        freq_FMR: 1D-array:
+            Ferromagnetic resonance frequency for each H values
+            
+        self.freq_c: float
+            Cavity frequency
+            
+        H_cross: float
+            H_value at freq_FMR = self.freq_c
+        """
         
         # Ferrimagnetic parameters (default: YIG)
         Ms = 0.176
@@ -287,6 +568,40 @@ class models(object):
         H_cross = self.freq_c/gamma - Ms/3
             
         return freq_s, freq_i, freq_FMR, self.freq_c, H_cross
+    
+    
+    
+    def f_func(self, x, y, z):
+        """
+        Method which uses a function from the rectangular prism model
+
+        Parameters
+        ----------
+        x, y, z: float
+            
+        Returns
+        ----------
+        float
+        """
+            
+        return (np.sqrt(x*x + y*y + z*z)*z)/(x*y)
+    
+    
+    
+    def G_func(self, x, y, z):
+        """
+        Method which uses a function from the rectangular prism model
+
+        Parameters
+        ----------
+        x, y, z: float
+            
+        Returns
+        ----------
+        float
+        """
+            
+        return z + np.sqrt(x*x + y*y + z*z)
 
 
 
@@ -313,7 +628,7 @@ if __name__ == '__main__':
     
     
     model = models()
-    model.search_freq_c(f, [S210[int(len(H)/2)], S210[0]])
+    model.search_freq_c(f, [S210[0], S210[int(len(H)/2)]])
     
     
     # Meshgrid for a colormap
@@ -321,44 +636,11 @@ if __name__ == '__main__':
     pos = np.array(list(zip(np.ravel(Hg0), np.ravel(freqg0))))
     S21 = np.ravel(S210)
     
-    """
-    fig, ax = plt.subplots()
-    im = ax.pcolormesh(Hg0, freqg0, S210, cmap='hot', vmin=-100, vmax = -20, shading='auto')
-    ax.set_xlabel('Magnetic Field [T]', fontsize=20)
-    ax.set_ylabel('Frequency [GHz]', fontsize=20)
-    cb = plt.colorbar(im, ax=ax, boundaries=np.linspace(-140, -20, 100), ticks=np.linspace(-140, -20, 6))
-    cb.ax.set_ylabel('S\u2082\u2081 [dB]', rotation=-90, size=20, labelpad=10)
-    cb.ax.tick_params(labelsize=15) 
     
-    plt.show()
-    """
     
-    popt, pcov = scp.curve_fit(model.slab_model_3D, pos, S21, bounds=(0, 2), maxfev=600)
+    popt, pcov = scp.curve_fit(model.Slab_model_3D, pos, S21, bounds=(0, 2), maxfev=600)
     popt = popt[0]
-    """
-    fig, ax = plt.subplots(2, 1)
-
-    im = ax[0].pcolormesh(Hg0, freqg0, S210, cmap='hot', vmin=-100, vmax = -20, shading='auto')
-    ax[0].set_xlabel('Magnetic Field [T]', fontsize=20)
-    ax[0].set_ylabel('Frequency [GHz]', fontsize=20)
-    cb = plt.colorbar(im, ax=ax[0], boundaries=np.linspace(-140, -20, 100), ticks=np.linspace(-140, -20, 6))
-    cb.ax.set_ylabel('S\u2082\u2081 [dB]', rotation=-90, size=20, labelpad=10)
-    cb.ax.tick_params(labelsize=15) 
     
-    
-    S21_test2 = model.slab_model_3D(pos, popt)
-    S21_test2 = S21_test2.reshape(len(Hg0), len(Hg0[0]))
-    
-    im = ax[1].pcolormesh(Hg0, freqg0, S21_test2, cmap='hot', vmin=-100, vmax = -20, shading="auto")
-    ax[1].set_xlabel('Magnetic Field [T]', fontsize=20)
-    ax[1].set_ylabel('Frequency [GHz]', fontsize=20)
-    cb = plt.colorbar(im, ax=ax[1], boundaries=np.linspace(-140, -20, 100), ticks=np.linspace(-140, -20, 6))
-    cb.ax.set_ylabel('S\u2082\u2081 [dB]', rotation=-90, size=20, labelpad=10)
-    cb.ax.tick_params(labelsize=15) 
-    
-
-    plt.show()
-    """
     
     fig, ax = plt.subplots()
     im = ax.pcolormesh(Hg0, freqg0, S210, cmap='hot', vmin=-100, vmax = -20, shading='auto')
@@ -368,7 +650,7 @@ if __name__ == '__main__':
     cb.ax.set_ylabel('S\u2082\u2081 [dB]', rotation=90, size=20, labelpad=10)
     cb.ax.tick_params(labelsize=15) 
     
-    over2 = model.slab_model_2D(H, popt)
+    over2 = model.Slab_model_2D(H, popt)
     ax.plot(H, over2[0], 'g', H, over2[1], 'g', H, over2[2], 'g--',\
         [H[0], H[-1]], [over2[3], over2[3]], 'g--', lw=1)
     
@@ -390,4 +672,3 @@ if __name__ == '__main__':
     ax.tick_params(axis='both', which='major', labelsize=15)
     
     plt.show()
-    

@@ -136,57 +136,62 @@ class tab2_signals(models):
                         self.len_x = len(X_val)
                         self.len_y = len(Y_val[0])
                         
-                        index_c1 = np.where(S_val[0] == max(S_val[0]))
-                        index_c2 = np.where(S_val[-1] == max(S_val[-1]))
-                        print(Y_val[0, index_c1][0, 0])
-                        self.freq_c = (Y_val[0, index_c1][0, 0] + Y_val[-1, index_c2][0, 0])/2
-                        print(self.freq_c)
                         
                         grid_fit = list(zip(np.ravel(X_val), np.ravel(Y_val)))
                         S_val_fit = np.ravel(S_val)
+                        
                         self.S_min = min(S_val_fit)
                         self.S_max = max(S_val_fit)
+                        
+                        S_tick = int(abs(self.S_max - self.S_min)/6)*6 + int(self.S_min)
+                        
+                        
+                        self.search_freq_c(Y_val[0], [S_val[0], S_val[int(self.len_x/2)]])
+
                         
                         fittor_3D = getattr(self, self.fit_choice.currentText() + '_model_3D')
                         fittor_2D = getattr(self, self.fit_choice.currentText() + '_model_2D')
                         
                         popt, pcov = scp.curve_fit(fittor_3D, grid_fit, S_val_fit,\
-                            bounds=(1e-3, self.freq_c/2), p0=1, maxfev=800)
-                    
-                        print(popt)
-                        grid_fit = np.array(list(zip(np.ravel(X_val), np.ravel(Y_val))))
-                        fig, ax = plt.subplots(2, 1)
-
-                        im = ax[0].pcolormesh(X_val, Y_val, S_val, cmap='hot', vmin=self.S_min+60,\
-                            vmax=self.S_max+20, shading='auto')
-                        ax[0].set_xlabel(x_val_name.replace('_', ' ').replace('cg', '[').replace('cd', ']'))
-                        ax[0].set_ylabel(y_val_name.replace('_', ' ').replace('cg', '[').replace('cd', ']'))
-                        cb = plt.colorbar(im, ax=ax[0], boundaries=np.linspace(self.S_min, self.S_max, 500))
-                        cb.ax.set_title(self.S_val.currentText() + ' ' + S_unit)
+                            bounds=(0, 2), maxfev=600)
+                        popt = popt[0]
                         
                         
-                        im = ax[1].pcolormesh(X_val, Y_val, fittor_3D(grid_fit, popt[0]).\
-                            reshape(len(X_val), len(Y_val[0])),\
-                            cmap='hot', vmin=self.S_min+60, vmax=self.S_max+20, shading='auto')
-                        ax[1].set_xlabel(x_val_name.replace('_', ' ').replace('cg', '[').replace('cd', ']'))
-                        ax[1].set_ylabel(y_val_name.replace('_', ' ').replace('cg', '[').replace('cd', ']'))
-                        cb = plt.colorbar(im, ax=ax[1], boundaries=np.linspace(self.S_min, self.S_max, 500))
-                        cb.ax.set_title(self.S_val.currentText() + ' ' + S_unit)
-
-                        plt.show()
-                    
-                    
                         fig, ax = plt.subplots()
-                        im = ax.pcolormesh(X_val, Y_val, S_val, cmap='hot',\
-                            vmin=self.S_min+60, vmax=self.S_max+20, shading='auto')
-                        ax.set_xlabel(x_val_name.replace('_', ' ').replace('cg', '[').replace('cd', ']'))
-                        ax.set_ylabel(y_val_name.replace('_', ' ').replace('cg', '[').replace('cd', ']'))
-                        cb = plt.colorbar(im, ax=ax, boundaries=np.linspace(self.S_min, self.S_max, 500))
-                        cb.ax.set_title('S\u2082\u2081 [dB]')
-
-                        over = fittor_2D(x_val, popt[0])
-                        ax.plot(x_val, over[0], 'b', x_val, over[1], 'b', x_val, over[2], 'b--',\
-                            [x_val[0], x_val[-1]], [over[3], over[3]], 'b--',lw=0.5)
+                        im = ax.pcolormesh(X_val, Y_val, S_val, cmap='hot', vmin=-100, vmax=-20,\
+                            shading='auto')
+                        
+                        ax.set_xlabel('Magnetic Field [T]', fontsize=30)
+                        ax.set_ylabel('Frequency [GHz]', fontsize=30)
+                        
+                        cb = plt.colorbar(im, ax=ax, boundaries=np.linspace(self.S_min, self.S_max, 500),\
+                            ticks=np.linspace(-200, 0, 11))
+                        cb.ax.set_ylabel('S\u2082\u2081 [dB]', rotation=90, size=30, labelpad=10)
+                        cb.ax.tick_params(labelsize=30) 
+                        
+                        over2 = fittor_2D(X_val[:, 0], popt)
+                        ax.plot(X_val[:, 0], over2[0], 'g', X_val[:, 0], over2[1], 'g', X_val[:, 0], over2[2], 'g--',\
+                            [X_val[0, 0], X_val[-1, 0]], [over2[3], over2[3]], 'g--', lw=1)
+                        
+                        ax.arrow(over2[4], over2[3], 0, popt, length_includes_head = True,\
+                            linewidth = 0.01, head_width=0.006, head_length=0.2, color='w')
+                        ax.arrow(over2[4], over2[3], 0, -popt, length_includes_head = True,\
+                            linewidth = 0.01, head_width=0.006, head_length=0.2, color='w')
+                        
+                        ax.annotate(f'g/\u03C0 = {round(popt, 2)}', (over2[4]+0.01, over2[3]+0.1),\
+                            fontsize=30, c='w')
+                        
+                        ax.annotate(f'f\u209A = {round(over2[3], 2)}', (X_val[0, 0]+1e-3, over2[3]+0.1),\
+                            fontsize=30, c='w')
+                        
+                        ax.annotate('f\u2098', (X_val[0, 0]+1e-3, Y_val[0, -1]-0.5), fontsize=30, c='k')
+                        
+                        ax.annotate('f\u208A', (-over2[4], over2[3]+0.1+popt), fontsize=30, c='w')
+                        
+                        ax.annotate('f\u208B', (-over2[4], over2[3]-0.4-popt), fontsize=30, c='w')
+                        
+                        ax.set_ylim(Y_val[0, 0], Y_val[0, -1])
+                        ax.tick_params(axis='both', which='major', labelsize=30)
                         
                         plt.show()
                     
