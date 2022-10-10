@@ -10,12 +10,13 @@ class gauss(object):
         rm = visa.ResourceManager()
         self.gauss = rm.open_resource(address_gauss)
         self.gauss.write('UNIT ' + str(unit+1))
-        print(unit+1)
         print('Connected to ' + self.gauss.query("*IDN?"))
 
 
     def getData(self):
+        print('5')
         value = self.gauss.query("RDGFIELD?")[:-1]
+        print('6')
         return value
         
         

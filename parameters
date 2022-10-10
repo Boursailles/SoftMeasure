@@ -1,2 +1,2 @@
 # f_start, f_stop, f_point, IFBW, v_start,v_stop, v_step, mag_unit
-0.1 10 3001 1 0.0 1. 0.2 1
+0.1 20 6001 1 -4 10 0.01 1

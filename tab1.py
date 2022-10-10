@@ -2,7 +2,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from measures import *
 from tab1_signals import *
 from Save import *
@@ -79,7 +79,7 @@ class tab1(tab1_signals, save):
         
     def volt_box(self):
         # Voltage settings
-        self.v_box = QGroupBox('Voltage settings')
+        self.v_box = QGroupBox('Current settings')
             
         self.v_start = QLineEdit(self.params[4])
         self.v_stop = QLineEdit(self.params[5])
@@ -88,13 +88,13 @@ class tab1(tab1_signals, save):
             
         volt_layout = QGridLayout()
             
-        volt_layout.addWidget(QLabel('Start [V] :'), 0, 0)
+        volt_layout.addWidget(QLabel('Start [A] :'), 0, 0)
         volt_layout.addWidget(self.v_start, 0, 1)
             
-        volt_layout.addWidget(QLabel('Stop [V] :'), 1, 0)
+        volt_layout.addWidget(QLabel('Stop [A] :'), 1, 0)
         volt_layout.addWidget(self.v_stop, 1, 1)
             
-        volt_layout.addWidget(QLabel('Step [V] :'), 2, 0)
+        volt_layout.addWidget(QLabel('Step [A] :'), 2, 0)
         volt_layout.addWidget(self.v_step, 2, 1)
             
         self.v_box.setLayout(volt_layout)

@@ -17,26 +17,27 @@ class save(object):
     def selectTarget(self):
         dialog = QFileDialog()
 
-        if self.pathEdit.text():
-            dialog.setDirectory(self.pathEdit.text())
+        '''if self.pathEdit.text():
+            dialog.setDirectory(self.pathEdit.text())'''
 
         dialog.setFileMode(dialog.Directory)
 
         # we cannot use the native dialog, because we need control over the UI
         options = dialog.Options(dialog.DontUseNativeDialog | dialog.ShowDirsOnly)
         dialog.setOptions(options)
+        path = dialog.getExistingDirectory()
+        self.pathEdit.setText(path)
 
 
-
-        def checkLineEdit(path):
-            if not path:
-                return
-            if path.endswith(QDir.separator()):
-                return checkLineEdit(path.rstrip(QDir.separator()))
-            path = QFileInfo(path)
-            if path.exists() or QFileInfo(path.absolutePath()).exists():
-                button.setEnabled(True)
-                return True
+    def checkLineEdit(path):
+        if not path:
+            return
+        if path.endswith(QDir.separator()):
+            return checkLineEdit(path.rstrip(QDir.separator()))
+        path = QFileInfo(path)
+        if path.exists() or QFileInfo(path.absolutePath()).exists():
+            button.setEnabled(True)
+            return True
 
         # get the "Open" button in the dialog
         button = dialog.findChild(QDialogButtonBox).button(
@@ -65,5 +66,5 @@ class save(object):
 if __name__ == '__main__':
     import sys
     app = QApplication(sys.argv)
-    w = save()
+    w = save().selectTarget()
     sys.exit(app.exec_())

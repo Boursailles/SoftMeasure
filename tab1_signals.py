@@ -42,18 +42,16 @@ class tab1_signals(Measures):
                                 try:
                                     param7 = float(self.v_step.text())
         
-        
+                                  
                                     params = [[self.f_start.text(), self.f_stop.text(), self.f_point.text(),\
                                         self.IFBW.text(), self.v_start.text(), self.v_stop.text(),\
                                             self.v_step.text(), self.mag_unit.currentIndex()]]
-                                    
+   
                                     np.savetxt(os.getcwd()+'/parameters', params,\
                                         header='f_start, f_stop, f_point, IFBW, v_start,'+\
                                         'v_stop, v_step, mag_unit', fmt='%s')
                                     
-                                    
                                     super().__init__(*params[0])
-                                    
                                     
                                     path = self.path.text()
                                     try:
@@ -68,13 +66,14 @@ class tab1_signals(Measures):
                                         if self.address_gauss == None:
                                             QMessageBox.about(self, "Warning",\
                                                 "Connection issue with Gaussmeter")
-                                            
+                                    
                                         if self.address_mag == None:
                                             QMessageBox.about(self, "Warning", "Connection issue with Kikusui")
         
-        
                                 except ValueError:
                                     QMessageBox.about(self, "Warning", "v<sub>step</sub> is not a number")
+                                    print('Connected to '+ self.vna.vna.query("*IDN?"))
+                                    self.mag.off()
                             except ValueError:
                                 QMessageBox.about(self, "Warning", "v<sub>stop</sub> is not a number")
                         except ValueError:
@@ -127,32 +126,31 @@ class tab1_signals(Measures):
                 self.S[i], self.H[i] = self.getData(val)
                 
                 with open(path + '/S/S11/Intensity.txt', How_to_write) as f:
-                    f.write(str([val[0] for val in self.S[i][0]])[1: -1] + '\n')
+                    f.write(str([val for val in self.S[i][0][0]])[1: -1] + '\n')
                     
                 with open(path + '/S/S11/Phase.txt', How_to_write) as f:
-                    f.write(str([val[1] for val in self.S[i][0]])[1: -1] + '\n')
+                    f.write(str([val for val in self.S[i][0][1]])[1: -1] + '\n')
 
                     
-                    
                 with open(path + '/S/S12/Intensity.txt', How_to_write) as f:
-                    f.write(str([val[0] for val in self.S[i][1]])[1: -1] + '\n')
+                    f.write(str([val for val in self.S[i][1][0]])[1: -1] + '\n')
                     
                 with open(path + '/S/S12/Phase.txt', How_to_write) as f:
-                    f.write(str([val[1] for val in self.S[i][1]])[1: -1] + '\n')
+                    f.write(str([val for val in self.S[i][1][1]])[1: -1] + '\n')
                     
                     
                 with open(path + '/S/S21/Intensity.txt', How_to_write) as f:
-                    f.write(str([val[0] for val in self.S[i][2]])[1: -1] + '\n')
+                    f.write(str([val for val in self.S[i][2][0]])[1: -1] + '\n')
                     
                 with open(path + '/S/S21/Phase.txt', How_to_write) as f:
-                    f.write(str([val[1] for val in self.S[i][2]])[1: -1] + '\n')
+                    f.write(str([val for val in self.S[i][2][1]])[1: -1] + '\n')
                 
                     
                 with open(path + '/S/S22/Intensity.txt', How_to_write) as f:
-                    f.write(str([val[0] for val in self.S[i][3]])[1: -1] + '\n')
+                    f.write(str([val for val in self.S[i][3][0]])[1: -1] + '\n')
                     
                 with open(path + '/S/S22/Phase.txt', How_to_write) as f:
-                    f.write(str([val[1] for val in self.S[i][3]])[1: -1] + '\n')
+                    f.write(str([val for val in self.S[i][3][1]])[1: -1] + '\n')
                 
                 
                 with open(path + '/H_values.txt', 'a') as f:
@@ -175,14 +173,12 @@ S22 cgdBcd, S22 cgdegcd \n')
                     f.write(str(val*1e-9) + '\n')
                     
                     
-            with open(path + '/V_values.txt', 'w') as f:
-                f.write('Voltage cgVcd\n')
+            with open(path + '/I_values.txt', 'w') as f:
+                f.write('Current cgAcd\n')
                 for val in self.v_list:
                     f.write(str(val) + '\n')
                 
-                
             self.end()
-                
             self.reset()
         
         

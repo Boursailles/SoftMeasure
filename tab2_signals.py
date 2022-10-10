@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from measures import *
 from Models import *
 import time
-from QLed import QLed
 
 
 
@@ -103,28 +102,30 @@ class tab2_signals(models):
                     
                     
                     
-                    def goplot(X_val, Y_val, S_val, s_val):
-                            min_S = min(s_val)
-                            max_S = max(s_val)
-                            
-                            plt.ion()
-                            
-                            fig, ax = plt.subplots()
+                    def goplot(X_val, Y_val, S_val, x_val):
+                        self.len_x = len(X_val)
+                        self.len_y = len(Y_val[0])
 
-                            im = ax.pcolormesh(X_val, Y_val, S_val, cmap='hot', vmin=min_S+60,\
-                                vmax=max_S+20, shading='auto')
-                            ax.set_xlabel(x_val_name.replace('_', ' ').replace('cg', '[').replace('cd', ']'))
-                            ax.set_ylabel(y_val_name.replace('_', ' ').replace('cg', '[').replace('cd', ']'))
-                            cb = plt.colorbar(im, ax=ax, boundaries=np.linspace(min_S, max_S, 500))
-                            cb.set_label(self.S_val.currentText() + ' ' + S_unit)
-                            """fig.canvas.draw()
-                            fig.canvas.flush_events()
-                            time.sleep(2)
-                            
-                            cb.remove()
-                            cb = plt.colorbar(im, ax=ax, boundaries=np.linspace(-0.2, 0.1, 500))
-                            cb.set_label(self.S_val.currentText() + ' ' + S_unit)"""
-                            fig.canvas.draw()
+
+                        S_val_fit = np.ravel(S_val)
+                    
+                        self.S_min = min(S_val_fit)
+                        self.S_max = max(S_val_fit)
+
+
+                        fig, ax = plt.subplots(figsize=(12, 12))
+                        im = ax.pcolormesh(X_val, Y_val, S_val, cmap='hot', vmin=0.8*self.S_min, vmax=1.2*self.S_max,\
+                            shading='auto')
+                        
+                        ax.set_xlabel('Magnetic Field [T]', fontsize=30)
+                        ax.set_ylabel('Frequency [GHz]', fontsize=30)
+                        
+                        cb = plt.colorbar(im, ax=ax, boundaries=np.linspace(self.S_min, self.S_max, 500),\
+                            ticks=np.linspace(-2*self.S_min, 0, 11))
+                        cb.ax.set_ylabel('S\u2082\u2081 [dB]', rotation=90, size=30, labelpad=10)
+                        cb.ax.tick_params(labelsize=30)
+
+                        plt.show()
                             
                                               
                                               
@@ -141,6 +142,7 @@ class tab2_signals(models):
                         S_val_fit = np.ravel(S_val)
                         
                         self.S_min = min(S_val_fit)
+                        self.S21_min = self.S_min
                         self.S_max = max(S_val_fit)
                         
                         S_tick = int(abs(self.S_max - self.S_min)/6)*6 + int(self.S_min)
@@ -153,7 +155,7 @@ class tab2_signals(models):
                         fittor_2D = getattr(self, self.fit_choice.currentText() + '_model_2D')
                         
                         popt, pcov = scp.curve_fit(fittor_3D, grid_fit, S_val_fit,\
-                            bounds=(0, 2), maxfev=600)
+                            bounds=(0, 10), maxfev=600)
                         popt = popt[0]
                         
                         

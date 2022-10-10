@@ -8,21 +8,22 @@ import pyvisa as visa
 import numpy as np
 import matplotlib.pyplot as matplotlib
 import time
-from VNA import *
+from RS_VNA import RSZNB40VNA
 from kikusui import *
 from gaussmeter import *
+from danfysik9700 import *
 
 
 
 class Measures(object):
     def __init__(self, f_start, f_stop, f_point, IFBW, v_start, v_stop, v_step, mag_unit):
-        f_start = float(f_start)*1e9
-        f_stop = float(f_stop)*1e9
-        f_point = int(f_point)
-        IFBW = float(IFBW)*1e3
-        v_start = float(v_start)
-        v_stop = float(v_stop)
-        v_step = float(v_step)
+        self.fstart = float(f_start)*1e9
+        self.fstop = float(f_stop)*1e9
+        self.fpoint = int(f_point)
+        self.IFBW2 = float(IFBW)*1e3
+        self.vstart = float(v_start)
+        self.vstop = float(v_stop)
+        self.vstep = float(v_step)
         mag_unit = int(mag_unit)
         self.vna = None
         
@@ -36,52 +37,58 @@ class Measures(object):
             if address == 'GPIB0::9::INSTR':
                     self.address_gauss = address
             
-            elif address == 'GPIB0::3::INSTR':
+            #elif address == 'GPIB0::3::INSTR':
+                    #self.address_mag = address
+                    
+            elif address == 'ASRL1::INSTR':
                     self.address_mag = address
+        
+        print(self.address_gauss)
+        print(self.address_mag)
         
         
         if self.address_gauss != None and self.address_mag != None:
             self.gauss = gauss(self.address_gauss, mag_unit)
-            self.mag = kikusui(self.address_mag)
+            #self.mag = kikusui(self.address_mag)
+            self.mag = danfysik9700()
+            #DanWithTau()
             
         elif self.address_gauss != None:
             self.address_gauss = True
         
         elif self.address_mag != None:
             self.address_mag = True
-        
-            
-            
+                   
         try:
-            self.vna = vna(f_point, f_start, f_stop, IFBW)
-            self.mag.start_point(self.v_start)
-        except:
+            self.vna = RSZNB40VNA(self.fpoint, self.fstart, self.fstop, self.IFBW2)
+            #self.mag.start_point(self.v_start)
+            self.mag.set(self.vstart)
+        except Exception as err:
+            error_str = "{0}".format(err)
+            print(error_str)
             QMessageBox.about(self, "Warning", "Connection issue with VNA")
+                    
         
-        
-        v_point = int((v_stop-v_start)/v_step)+1
-        self.v_list = np.linspace(v_start, v_stop, int((v_stop-v_start)/v_step)+1)
+        self.v_list = np.linspace(self.vstart, self.vstop, int((self.vstop-self.vstart)/self.vstep)+1)
         self.H = list(np.zeros_like(self.v_list))
         self.S = list(np.zeros_like(self.v_list)) 
-        self.freq = np.linspace(f_start, f_stop, f_point)
-
-        
+        self.freq = np.linspace(self.fstart, self.fstop, self.fpoint)      
     
     def getData(self, mag):
-        self.mag.set_v(mag)
-        return list(self.vna.getData()), self.gauss.getData()
-            
-        
+        #self.mag.set_v(mag)
+        print('1')
+        self.mag.set(mag)
+        print('2')
+        return list(self.vna.read_s_param()), self.gauss.getData()
         
     def reset(self):
         self.mag.off()
-        self.vna.reset()
-
+        #self.vna.reset()
 
 
 if __name__ == '__main__':
     v_start = 1
-    v_stop = 2
+    v_stop = -1
     v_step = 0.1
     f_point = 10
     f_start = 100.0e6

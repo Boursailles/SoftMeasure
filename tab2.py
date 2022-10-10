@@ -53,9 +53,9 @@ class tab2(tab2_signals, search):
         values_layout.addWidget(QLabel('x-axis :'), 1, 0)
         values_layout.addWidget(QLabel('y-axis :'), 1, 2)
         self.x_val = QComboBox()
-        self.x_val.addItems(['H', 'V', 'f'])
+        self.x_val.addItems(['H', 'I', 'f'])
         self.y_val = QComboBox()
-        self.y_val.addItems(['f', 'V', 'H'])
+        self.y_val.addItems(['f', 'I', 'H'])
         values_layout.addWidget(self.x_val, 1, 1)
         values_layout.addWidget(self.y_val, 1, 3)
         

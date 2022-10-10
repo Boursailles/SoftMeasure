@@ -3,7 +3,7 @@ import sys
 import math
 import pyvisa as visa
 import numpy as np
-import matplotlib.pyplot as matplotlib
+#import matplotlib.pyplot as matplotlib
 import time
 from gaussmeter import *
 
@@ -11,9 +11,10 @@ from gaussmeter import *
 class kikusui(object):
     def __init__(self, address_mag):
         self.magnet = None
+        self.address_mag = address_mag
         
         rm = visa.ResourceManager()
-        self.magnet = rm.open_resource(address_mag)
+        self.magnet = rm.open_resource(self.address_mag)
         print('Connected to ' + self.magnet.query("*IDN?"))
         self.magnet.write("*RST")
     

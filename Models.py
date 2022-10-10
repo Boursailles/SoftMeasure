@@ -1,8 +1,6 @@
 from inspect import modulesbyfile
 import numpy as np
 import matplotlib.pyplot as plt
-import csv
-import pandas as pd 
 import scipy.optimize as scp
 from scipy.signal import savgol_filter
 import warnings
@@ -84,7 +82,7 @@ class models(object):
             """
             
             # Suppress S21 values below the average of S21 values for a better fit
-            self.S21_min = min(S21)
+            #self.S21_min = min(S21)
             self.S21_max = max(S21)
         
             S21 = np.maximum(S21, np.mean(S21)) - np.mean(S21)
@@ -111,6 +109,8 @@ class models(object):
         Q_values = self.calc_Q_factor(freq, freq_c_first, S21_first)
         
         Q_factor_first, freq_c_first, sigma, S21max, S21min, freq_gap, idx_min, idx_max = Q_values
+        self.sigma = sigma
+        print(self.sigma)
         
         
         params = {'mathtext.default': 'regular' }
@@ -138,12 +138,15 @@ class models(object):
         
         plt.legend(prop={'size': 30})
         
-        
         freq_c_last = covid(freq, S21_last)
         freq_c_last = self.calc_Q_factor(freq, freq_c_last, S21_last)[1]
         
         # Average of the two BM modes found out for each H values
         self.freq_c = (freq_c_first + freq_c_last)/2
+        print(self.freq_c)
+
+        self.S_min = S21min
+        self.S_max = S21max
         
         
         
@@ -276,7 +279,7 @@ class models(object):
         freq_gap = inversed_lorentzian(popt[2]-3, *popt[1:])
         Q_factor = freq_c/freq_gap
         
-        return Q_factor, *popt, freq_gap, idx_min, idx_max
+        return Q_factor, popt, freq_gap, idx_min, idx_max
         
     
       
@@ -359,8 +362,8 @@ class models(object):
             freq_i = 0.5*(freq_av - np.sqrt(delta))
             
             # Imitating S21 parameters with lorentzian centered on f+ and f- values
-            result[i] = (self.lorentzian(pos[i*self.len_y: (1 + i)*self.len_y, 1], freq_s, 0.1)+\
-            self.lorentzian(pos[i*self.len_y: (1 + i)*self.len_y, 1], freq_i, 0.1))*(self.S_max - self.S_min) + self.S_min
+            result[i] = (self.lorentzian(pos[i*self.len_y: (1 + i)*self.len_y, 1], freq_s, self.sigma)+\
+            self.lorentzian(pos[i*self.len_y: (1 + i)*self.len_y, 1], freq_i, self.sigma))*(self.S_max - self.S_min) + self.S_min
         
         return np.ravel(result)
 
@@ -611,9 +614,9 @@ if __name__ == '__main__':
     nbp_H = 1401
     
     
-    H_file = "C:/Users/guill/Documents/Thèse/Slab/Measures/TEC03_BM_5.5/H_values.txt"
-    freq_file = "C:/Users/guill/Documents/Thèse/Slab/Measures/TEC03_BM_5.5/f_values.txt"
-    S21_file = "C:/Users/guill/Documents/Thèse/Slab/Measures/TEC03_BM_5.5/S/S21/Intensity.txt"
+    H_file = "D:/Guillaume_B/USC_Que_Choisir/7.5_GHz/H_values.txt"
+    freq_file = "D:/Guillaume_B/USC_Que_Choisir/7.5_GHz/f_values.txt"
+    S21_file = "D:/Guillaume_B/USC_Que_Choisir/7.5_GHz/S/S12/Intensity.txt"
 
     
     H_table = np.genfromtxt(H_file, names=True, delimiter = '\n')
@@ -626,21 +629,29 @@ if __name__ == '__main__':
     H = H_table[H_name]
     f = f_table[f_name]
     
-    
+    S21 = np.ravel(S210)
     model = models()
+    model.S21_min = min(S21)
     model.search_freq_c(f, [S210[0], S210[int(len(H)/2)]])
     
     
     # Meshgrid for a colormap
     freqg0, Hg0 = np.meshgrid(f, H)
     pos = np.array(list(zip(np.ravel(Hg0), np.ravel(freqg0))))
-    S21 = np.ravel(S210)
     
-    
-    
-    popt, pcov = scp.curve_fit(model.Slab_model_3D, pos, S21, bounds=(0, 2), maxfev=600)
+
+    S21_fit = np.maximum(S21, model.S_min)
+    model.len_x = 401
+    model.len_y = 3001
+
+    S211 = S21_fit.reshape(model.len_x, model.len_y)
+    plt.plot(f, S211[0])
+    plt.plot() 
+
+    """
+    popt, pcov = scp.curve_fit(model.Slab_model_3D, pos, S21_fit, bounds=(0, 10), maxfev=600)
     popt = popt[0]
-    
+    """
     
     fig, ax = plt.subplots()
     im = ax.pcolormesh(Hg0, freqg0, S210, cmap='hot', vmin=-100, vmax = -20, shading='auto')
@@ -649,7 +660,7 @@ if __name__ == '__main__':
     cb = plt.colorbar(im, ax=ax, boundaries=np.linspace(-140, -20, 100), ticks=np.linspace(-140, -20, 6))
     cb.ax.set_ylabel('S\u2082\u2081 [dB]', rotation=90, size=20, labelpad=10)
     cb.ax.tick_params(labelsize=15) 
-    
+    popt = 3
     over2 = model.Slab_model_2D(H, popt)
     ax.plot(H, over2[0], 'g', H, over2[1], 'g', H, over2[2], 'g--',\
         [H[0], H[-1]], [over2[3], over2[3]], 'g--', lw=1)
