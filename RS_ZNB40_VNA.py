@@ -1,37 +1,82 @@
 import pyvisa as visa
+from PyQt5.QtWidgets import *
 import numpy as np
-import datetime
 
-class RSZNB40VNA:
-    def __init__(self, n_point, f_start, f_stop, IFBW):
+
+
+###############################################################################
+# This program is working with VNA_settings.py file for SoftMeasure.
+# It contains useful code allowing to operate the Rhode-Schwarz VNA, model ZNB40
+###############################################################################
+
+
+
+class VNA:
+    def __init__(self):
         """
         Rhode-Schwarz VNA, model ZNB40
-        :param IFBW: bandwidth in kHz
+
+        self.f_start: Starting frequency
+        self.f_stop: Stopping frequency
+        self.nb_point: Step number of frequencies
+        self.IFBW: Intermediate Frequency Band Width
+        self.power: Signal power
         """
-        self.n_point = n_point
+
+        self.f_start = None
+        self.f_stop = None
+        self.nb_point = None
+        self.IFBW = None
+        self.power = None
+        self.s11 =None
+        self.s12 = None
+        self.s21 = None
+        self.s22 = None
+
+        # Setup PyVISA instrument
+        self.address_vna = "TCPIP0::ZNB40-72-101845::inst0::INSTR"
+        # https://stackoverflow.com/a/39066537
+        self.rm = visa.ResourceManager()
+        
+        try:
+            self.vna = self.rm.open_resource(self.address_vna)
+            print('Connected to ' + self.vna.query("*IDN?"))
+
+        except visa.VisaIOError as e:
+            QMessageBox.about(self, "Warning", "Connection issue with VNA\nError Codes: " + self.rm.last_status+"\t" + self.rm.visalib.last_status)
+
+
+    def initialization(self, f_start, f_stop, nb_point, IFBW, power):
+        """
+        VNA initialization
+        
+        ---------
+        Parameter:
+        f_start: float
+            Starting frequency
+        f_stop: float
+            Stopping frequency
+        nb_point: int
+            Step number
+        IFBW: float
+            Intermediate Frequency Band Width
+        power: int
+            Signal power
+        """
+
+        self.nb_point = nb_point
         self.f_start = f_start
         self.f_stop = f_stop
         self.IFBW = IFBW
+        self.power = power
 
-        # Setup PyVISA instrument
-        address_vna = "TCPIP0::ZNB40-72-101845::inst0::INSTR"
-        # https://stackoverflow.com/a/39066537
-        self.rm = visa.ResourceManager()
-        try:
-            self.vna = self.rm.open_resource(address_vna)
-        except visa.VisaIOError as e:
-            print(e.args)
-            print(self.rm.last_status)
-            print(self.rm.visalib.last_status)
-        print('Connected to '+ self.vna.query("*IDN?"))
 
         self.vna.write("*RST")
-        
-        # Timeout in ms: https://pyvisa.readthedocs.io/en/1.8/resources.html#timeout
+
         # If VNA takes more than 2 min to answer, something's wrong
         # TODO: compute this from the sweep time
         self.vna.timeout = 2 * 60 * 1e3
-        
+
         # Define name trace with S parameter
         self.vna.write("CALC:PAR:SDEF 'Trc1', 'S11'")
         self.vna.write("CALC:PAR:SDEF 'Trc2', 'S12'")
@@ -85,18 +130,26 @@ class RSZNB40VNA:
         
         
         # Measure settings
-        self.vna.write("SWE:POIN " + str(self.n_point))
+        self.vna.write("SWE:POIN " + str(self.nb_point))
         self.vna.write("FREQ:STAR " + str(self.f_start))
         self.vna.write("FREQ:STOP " + str(self.f_stop))
         self.vna.write("BWID " + str(self.IFBW))
 
         self.vna.write("INIT:CONT:ALL ON; *WAI")
-        self.vna.write("SOUR:POW -10")
+        self.vna.write("SOUR:POW " + str(self.power))
 
 
     def read_s_param(self):
-        print('Started S param queries at %s' % str(datetime.datetime.now()))
-        s11, s12, s21, s22 = None, None, None, None
+        """
+        Recording of S-parameters in the following dictionaries:
+        self.instr.s11
+        self.instr.s12
+        self.instr.s21
+        self.instr.s22
+
+        Each are sorted like:
+        self.instr.sij = {'dB': array, 'phase': array}
+        """
 
         try:
             self.vna.write("INIT:CONT OFF; :INIT; *WAI")
@@ -108,7 +161,7 @@ class RSZNB40VNA:
             self.vna.write("DISP:TRAC3:Y:AUTO ONCE, 'Trc3'")
             self.vna.write("DISP:TRAC4:Y:AUTO ONCE, 'Trc4'")
                     
-            
+
             self.vna.write("FORM:DATA ASCii")
 
             s11_dB = self.vna.query("CALC:DATA:TRAC? 'Trc1', FDAT")[:-1]
@@ -124,43 +177,24 @@ class RSZNB40VNA:
             s22_phase = self.vna.query("CALC:DATA:TRAC? 'Trc8', FDAT")[:-1]
             
             
-            s11_dB = [float(val) for val in s11_dB.split(',')]
-            s11_phase = [float(val) for val in s11_phase.split(',')]
+            s11_dB = np.array([float(val) for val in s11_dB.split(',')])
+            s11_phase = np.array([float(val) for val in s11_phase.split(',')])
             
-            s12_dB = [float(val) for val in s12_dB.split(',')]
-            s12_phase = [float(val) for val in s12_phase.split(',')]
+            s12_dB = np.array([float(val) for val in s12_dB.split(',')])
+            s12_phase = np.array([float(val) for val in s12_phase.split(',')])
             
-            s21_dB = [float(val) for val in s21_dB.split(',')]
-            s21_phase = [float(val) for val in s21_phase.split(',')]
+            s21_dB = np.array([float(val) for val in s21_dB.split(',')])
+            s21_phase = np.array([float(val) for val in s21_phase.split(',')])
             
-            s22_dB = [float(val) for val in s22_dB.split(',')]
-            s22_phase = [float(val) for val in s22_phase.split(',')]
+            s22_dB = np.array([float(val) for val in s22_dB.split(',')])
+            s22_phase = np.array([float(val) for val in s22_phase.split(',')])
             
-            
-            s11 = np.array([s11_dB, s11_phase])
-            s12 = np.array([s12_dB, s12_phase])
-            s21 = np.array([s21_dB, s21_phase])
-            s22 = np.array([s22_dB, s22_phase])
-            
-            print('Finished S param queries at %s' % str(datetime.datetime.now()))
-        
+
+            self.s11 = {'dB': s11_dB, 'phase': s11_phase}
+            self.s12 = {'dB': s12_dB, 'phase': s12_phase}
+            self.s21 = {'dB': s21_dB, 'phase': s21_phase}
+            self.s22 = {'dB': s22_dB, 'phase': s22_phase}
+
+
         except visa.VisaIOError as e:
-            # https://stackoverflow.com/a/39066537
-            print("Error in RSZNB40VNA.read_s_param()")
-            print(e.args)
-            print(self.rm.last_status)
-            print(self.rm.visalib.last_status)
-      
-        return s11, s12, s21, s22
-        
-        
-        
-if __name__ == '__main__':
-    n_point = 3001
-    f_start = 100.0e6
-    f_stop = 20.0e9
-    IFBW = 1e3
-    
-    test = RSZNB40VNA(n_point, f_start, f_stop, IFBW)
-    s11, s12, s21, s22 = test.read_s_param()
-    print(s11)
+            QMessageBox.about(self, "Warning", "Connection issue with VNA\nError Codes: " + self.rm.last_status+"\t" + self.rm.visalib.last_status)
