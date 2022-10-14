@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import importlib
 
-
+# IMPORTANT VOIR LES CHEMINS POUR OUVRIR LE FICHIER VNA CAR DANS UN SOUS-DOSSIER
 
 ###############################################################################
 # This program is working with Interface.py file for SoftMeasure.
@@ -67,7 +67,7 @@ class VNA_settings():
             File name of the chosen VNA
         """
 
-        self.instr = importlib.__import__(vna.replace(' ', '_')).VNA()
+        self.instr = importlib.__import__('VNA/' + vna.replace(' ', '_')).VNA()
 
     
     def initialization(self):
