@@ -30,12 +30,12 @@ class VNA_settings():
         self.VNA_box = QGroupBox('VNA settings')
         self.f_start = QLineEdit()
         self.f_stop = QLineEdit()
-        self.nb_point = QSpinBox()
-        self.nb_point.setMaximum(10000)
-        self.nb_point.setValue(2)
+        self.nb_step = QSpinBox()
+        self.nb_step.setMaximum(10000)
+        self.nb_step.setValue(2)
         self.IFBW = QLineEdit()
         # Faire le bouton power: -10, 0, 10
-        # Faire le bouton choix du VNA: RS ou Anritsu pour l'instant
+        # Faire le bouton choix du VNA: RS ou rien d'autre pour l'instant
 
         VNA_layout = QGridLayout()
 
@@ -46,7 +46,7 @@ class VNA_settings():
         VNA_layout.addWidget(self.f_stop, 1, 1)
 
         VNA_layout.addWidget(QLabel('Values number:'), 2, 0)
-        VNA_layout.addWidget(self.nb_point, 2, 1)
+        VNA_layout.addWidget(self.nb_step, 2, 1)
 
         VNA_layout.addWidget(QLabel('IFBW [kHz]:'), 3, 0)
         VNA_layout.addWidget(self.IFBW, 3, 1)
@@ -80,7 +80,7 @@ class VNA_settings():
         self.power: Signal power
         """
 
-        self.instr.initialization(self.f_start.text(), self.f_stop.text(), self.nb_point.text(), self.IFBW.text(), self.power.text())
+        self.instr.initialization(self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.IFBW.text(), self.power.text())
 
 
     def read_s_param(self):

@@ -35,7 +35,7 @@ class VNA:
         self.s22 = None
 
         # Setup PyVISA instrument
-        self.address_vna = "TCPIP0::ZNB40-72-101845::inst0::INSTR"
+        self.address_vna = 'TCPIP0::ZNB40-72-101845::inst0::INSTR'
 
         self.rm = visa.ResourceManager()
         try:
