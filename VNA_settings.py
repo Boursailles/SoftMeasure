@@ -139,7 +139,3 @@ if __name__ == '__main__':
     vna.initialization()
 
     sys.exit(app.exec_())
-
-    
-                
-
