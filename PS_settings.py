@@ -27,7 +27,7 @@ class PS_settings():
         Display of PS widgets in the graphics interface
         """
 
-        self.PS_box = QGroupBox('PS settings')
+        self.PS_box = QGroupBox('Power Supply')
             
         self.I_start = QLineEdit()
         self.I_stop = QLineEdit()
@@ -73,10 +73,7 @@ class PS_settings():
     
     def initialization(self):
         """
-        PS initialization with following parameters (chosen in the interface, see Interface.py):
-        self.I_start: Starting frequency
-        self.I_stop: Stopping frequency
-        self.nb_step: Step number
+        PS initialization.
         """
 
         self.instr.initialization()

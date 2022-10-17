@@ -6,7 +6,7 @@ import numpy as np
 
 ###############################################################################
 # This program is working with VNA_settings.py file for SoftMeasure.
-# It contains useful code allowing to operate the Rhode-Schwarz VNA, model ZNB40.
+# It contains useful code allowing to operate the Rhode-Schwarz Vector Network Analyzer (VNA), model ZNB40.
 ###############################################################################
 
 

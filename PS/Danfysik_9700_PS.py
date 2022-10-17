@@ -6,7 +6,7 @@ from time import sleep
 
 ###############################################################################
 # This program is working with PS_settings.py file for SoftMeasure.
-# It contains useful code allowing to operate the Danfysik power supply (PS), model 9700.
+# It contains useful code allowing to operate the Danfysik Power Supply (PS), model 9700.
 ###############################################################################
 
 

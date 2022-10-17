@@ -27,7 +27,7 @@ class VNA_settings():
         Display of VNA widgets in the graphics interface
         """
 
-        self.VNA_box = QGroupBox('VNA settings')
+        self.VNA_box = QGroupBox('Vector Network Analyzer')
         self.f_start = QLineEdit()
         self.f_stop = QLineEdit()
         self.nb_step = QSpinBox()
