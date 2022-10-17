@@ -5,7 +5,10 @@ import importlib
 
 
 
-
+###############################################################################
+# This program is working with Interface.py file for SoftMeasure.
+# It contains useful code allowing to operate the Power Supply (PS).
+###############################################################################
 
 
 
@@ -73,7 +76,21 @@ class PS_settings():
         PS initialization with following parameters (chosen in the interface, see Interface.py):
         self.I_start: Starting frequency
         self.I_stop: Stopping frequency
-        self.nb_point: Step number
-        self.IFBW: Intermediate Frequency Band Width
-        self.power: Signal power
+        self.nb_step: Step number
         """
+
+        self.instr.initialization()
+
+
+    def set_current(self, amps):
+        """
+        PS setting current in Amps.
+        """
+        self.instr.set_current(amps)
+
+    
+    def off(self):
+        """
+        Sets the PS off.
+        """
+        self.instr.off()

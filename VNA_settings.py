@@ -3,11 +3,11 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import importlib
 
-# IMPORTANT VOIR LES CHEMINS POUR OUVRIR LE FICHIER VNA CAR DANS UN SOUS-DOSSIER
+
 
 ###############################################################################
 # This program is working with Interface.py file for SoftMeasure.
-# It contains useful code allowing to operate the VNA
+# It contains useful code allowing to operate the Vector Network Analyzer (VNA).
 ###############################################################################
 
 
@@ -75,7 +75,7 @@ class VNA_settings():
         VNA initialization with following parameters (chosen in the interface, see Interface.py):
         self.f_start: Starting frequency
         self.f_stop: Stopping frequency
-        self.nb_point: Step number
+        self.nb_step: Step number
         self.IFBW: Intermediate Frequency Band Width
         self.power: Signal power
         """
@@ -98,6 +98,11 @@ class VNA_settings():
         self.instr.read_s_param()
 
 
+    def off(self):
+        """
+        Sets the VNA off.
+        """
+        self.instr.off()
 
 
 

@@ -6,7 +6,7 @@ import numpy as np
 
 ###############################################################################
 # This program is working with VNA_settings.py file for SoftMeasure.
-# It contains useful code allowing to operate the Rhode-Schwarz VNA, model ZNB40
+# It contains useful code allowing to operate the Rhode-Schwarz VNA, model ZNB40.
 ###############################################################################
 
 
@@ -197,3 +197,7 @@ class VNA:
 
         except visa.VisaIOError as e:
             QMessageBox.about(self, "Warning", "Connection issue with VNA\nError Codes: " + self.rm.last_status+"\t" + self.rm.visalib.last_status)
+
+
+    def off(self):
+        self.vna.write("*RST")

@@ -6,7 +6,7 @@ from time import sleep
 
 ###############################################################################
 # This program is working with PS_settings.py file for SoftMeasure.
-# It contains useful code allowing to operate the Danfysik power supply (PS), model ZNB40
+# It contains useful code allowing to operate the Danfysik power supply (PS), model 9700.
 ###############################################################################
 
 
@@ -61,7 +61,7 @@ class PS:
         self.enable()
 
         self._current_ppm = 0
-        self.set_current(0)
+        self.set_amps(0)
 
 
     def set_current(self, amps):
@@ -81,16 +81,6 @@ class PS:
             sleep(0.5)
 
         self.set_current(I_stop)
-
-
-    def off(self):
-        """
-        Closes communication.
-        """
-        self.set_current(0)
-        self.disable()
-        self.local()
-        self.ps.close()
 
 
     def set_amps(self, amps):
@@ -117,6 +107,16 @@ class PS:
 
         self._current_ppm = ppm
         self.ps.write("DA 0,%d" % ppm)
+
+
+    def off(self):
+        """
+        Closes communication.
+        """
+        self.set_current(0)
+        self.disable()
+        self.local()
+        self.ps.close()
 
 
     def unlock(self):
