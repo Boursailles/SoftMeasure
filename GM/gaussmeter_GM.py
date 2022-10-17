@@ -12,7 +12,7 @@ import numpy as np
 
 
 class GM(object):
-    def __init__(self):
+    def __init__(self, rm):
         """
         brand GM, model
 
@@ -25,13 +25,8 @@ class GM(object):
         # Setup PyVISA instrument
         self.address_gm = 'GPIB0::9::INSTR'
 
-        self.rm = visa.ResourceManager()
-        try:
-            self.gm = self.rm.open_resource(self.address_gm)
-            print('Connected to ' + self.gm.query("*IDN?"))
-
-        except visa.VisaIOError as e:
-            QMessageBox.about(self, "Warning", "Connection issue with gaussmeter\nError Codes: " + self.rm.last_status+"\t" + self.rm.visalib.last_status)
+        self.gm = rm.open_resource(self.address_gm)
+        print('Connected to ' + self.gm.query("*IDN?"))
 
 
     def initialization(self, unit):
@@ -51,7 +46,9 @@ class GM(object):
         """
         Recording of magnetic field in the variable self.mag_value.
         """
+
         self.mag_value = self.gm.query("RDGFIELD?")[:-1]
+
         
         
 

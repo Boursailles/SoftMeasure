@@ -4,7 +4,7 @@ from PyQt5.QtGui import *
 import numpy as np
 from measures import *
 from tab1_signals import *
-from Save import *
+from Launch.Save import *
 
 
 
@@ -41,7 +41,7 @@ class tab1(tab1_signals, save):
         self.tab1.setLayout(self.tab1_layout)
         
         
-        super().__init__(self.pathEdit, self.okay, self.f_start, self.f_stop, self.f_point, self.IFBW,\
+        super().__init__(self.path, self.okay, self.f_start, self.f_stop, self.f_point, self.IFBW,\
             self.v_start, self.v_stop, self.v_step, self.mag_unit, self.initialize, self.loading, self.end)
         
         

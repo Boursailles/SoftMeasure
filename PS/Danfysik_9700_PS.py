@@ -12,7 +12,7 @@ from time import sleep
 
 
 class PS:
-    def __init__(self):
+    def __init__(self, rm):
         """
         Danfysik PS, model 9700
 
@@ -30,25 +30,17 @@ class PS:
         # Setup PyVISA instrument
         self.address_ps = 'ASRL1::INSTR'
 
-        self.rm = visa.ResourceManager()
-        try:
-            self.ps = self.rm.open_resource(self.address_ps)
-            print('Connected to ' + self.ps.query("*IDN?"))
+        rm = visa.ResourceManager()
+        self.ps = rm.open_resource(self.address_ps)
+        print('Connected to ' + self.ps.query("*IDN?"))
 
-            rm = visa.ResourceManager()
-            self.ps = rm.open_resource('ASRL1::INSTR')
-
-            # set attributes
-            self.ps.baud_rate = 115200
-            self.ps.data_bits = 8
-            self.ps.stop_bits = visa.constants.StopBits['one']
-            self.ps.parity = visa.constants.Parity['none']
-            self.ps.read_termination = '\n\r'
-            self.ps.write_termination = '\r'
-        
-
-        except visa.VisaIOError as e:
-            QMessageBox.about(self, "Warning", "Connection issue with the electromagnet\nError Codes: " + self.rm.last_status+"\t" + self.rm.visalib.last_status)
+        # set attributes
+        self.ps.baud_rate = 115200
+        self.ps.data_bits = 8
+        self.ps.stop_bits = visa.constants.StopBits['one']
+        self.ps.parity = visa.constants.Parity['none']
+        self.ps.read_termination = '\n\r'
+        self.ps.write_termination = '\r'
 
     
     def initialization(self):
@@ -81,8 +73,8 @@ class PS:
             sleep(0.5)
 
         self.set_current(I_stop)
-
-
+        
+        
     def set_amps(self, amps):
         """
         Set the current in Amps. This property is set through :attr:`~.current_ppm`.

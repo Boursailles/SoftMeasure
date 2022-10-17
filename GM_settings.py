@@ -1,7 +1,9 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+import os
 import importlib
+import glob
 
 
 
@@ -12,7 +14,7 @@ import importlib
 
 
 
-class GM_settings():
+class GM_settings:
     def __init__(self):
         """
         Settings of the GM which are generalized for any brand
@@ -27,30 +29,40 @@ class GM_settings():
         Display of GM widgets in the graphics interface
         """
 
-        self.GM_box = QGroupBox('GaussMeter')
+        self.box = QGroupBox('GaussMeter')
+        self.box.setCheckable(True)
+
+        # Get the list of devices in PS folder
+        list_device = glob.glob('GM/*.py')
+        list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -3] for val in list_device]
+        
+        self.device = QComboBox()
+        self.device.addItems(list_device)
+        self.device.setCurrentIndex(0)
+
         self.unit = QComboBox()
         self.unit.addItems(['G', 'T', 'Oe', 'A.m\u207B\u00B9'])
         self.unit.setCurrentIndex(0)
 
-        GM_layout = QGridLayout()
+        layout = QGridLayout()
 
-        GM_layout.addWidget(QLabel('Unit::'), 0, 0)
-        GM_layout.addWidget(self.unit, 0, 1)
+        layout.addWidget(QLabel('Device:'), 0, 0)
+        layout.addWidget(self.device, 0, 1)
 
-        self.GM_box.setLayout(GM_layout)
+        layout.addWidget(QLabel('Unit:'), 1, 0)
+        layout.addWidget(self.unit, 1, 1)
+
+        self.box.setLayout(layout)
 
 
-    def connection(self, gm):
+    def connection(self, rm):
         """
         Connection to the chosen GM (see the linked GM file)
-
-        ---------
-        Parameter:
-        gm: str
-            File name of the chosen GM
         """
 
-        self.instr = importlib.__import__('GM/' + gm.replace(' ', '_')).GM()
+        path_device = 'GM.'+ self.device.currentText().replace(' ', '_') + '_GM'
+        
+        self.instr = importlib.import_module(path_device).GM(rm)
 
     
     def initialization(self):

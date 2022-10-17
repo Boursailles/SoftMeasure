@@ -1,7 +1,9 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+import os
 import importlib
+import glob
 
 
 
@@ -27,47 +29,64 @@ class VNA_settings():
         Display of VNA widgets in the graphics interface
         """
 
-        self.VNA_box = QGroupBox('Vector Network Analyzer')
+        self.box = QGroupBox('Vector Network Analyzer')
+        self.box.setCheckable(True)
+
+        # Get the list of devices in PS folder
+        list_device = glob.glob('VNA/*.py')
+        list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -4] for val in list_device]
+        
+        self.device = QComboBox()
+        self.device.addItems(list_device)
+        self.device.setCurrentIndex(0)
+
         self.f_start = QLineEdit()
         self.f_stop = QLineEdit()
         self.nb_step = QSpinBox()
         self.nb_step.setMaximum(10000)
         self.nb_step.setValue(2)
         self.IFBW = QLineEdit()
-        # Faire le bouton power: -10, 0, 10
-        # Faire le bouton choix du VNA: RS ou rien d'autre pour l'instant
+        self.power = QComboBox()
+        self.power.addItems(['-10', '0', '10'])
+        self.power.setCurrentIndex(0)
+        
 
-        VNA_layout = QGridLayout()
+        layout = QGridLayout()
 
-        VNA_layout.addWidget(QLabel('Start [GHz]:'), 0, 0)
-        VNA_layout.addWidget(self.f_start, 0, 1)
+        layout.addWidget(QLabel('Device:'), 0, 0)
+        layout.addWidget(self.device, 0, 1)
 
-        VNA_layout.addWidget(QLabel('Stop [GHz]:'), 1, 0)
-        VNA_layout.addWidget(self.f_stop, 1, 1)
+        layout.addWidget(QLabel('Start [GHz]:'), 1, 0)
+        layout.addWidget(self.f_start, 1, 1)
 
-        VNA_layout.addWidget(QLabel('Values number:'), 2, 0)
-        VNA_layout.addWidget(self.nb_step, 2, 1)
+        layout.addWidget(QLabel('Stop [GHz]:'), 2, 0)
+        layout.addWidget(self.f_stop, 2, 1)
 
-        VNA_layout.addWidget(QLabel('IFBW [kHz]:'), 3, 0)
-        VNA_layout.addWidget(self.IFBW, 3, 1)
+        layout.addWidget(QLabel('Values number:'), 3, 0)
+        layout.addWidget(self.nb_step, 3, 1)
 
-        VNA_layout.addWidget(QLabel('Power[dBm]:'), 4, 0)
-        VNA_layout.addWidget(self.power, 4, 1)
+        layout.addWidget(QLabel('IFBW [kHz]:'), 4, 0)
+        layout.addWidget(self.IFBW, 4, 1)
 
-        self.VNA_box.setLayout(VNA_layout)
+        layout.addWidget(QLabel('Power [dBm]:'), 5, 0)
+        layout.addWidget(self.power, 5, 1)
+
+        self.box.setLayout(layout)
 
 
-    def connection(self, vna):
+    def connection(self, rm):
         """
         Connection to the chosen VNA (see the linked VNA file)
 
         ---------
         Parameter:
-        vna: str
-            File name of the chosen VNA
+        rm: class
+            Ressource Manager
         """
 
-        self.instr = importlib.__import__('VNA/' + vna.replace(' ', '_')).VNA()
+        path_device = 'VNA.'+ self.device.currentText().replace(' ', '_') + '_VNA'
+        
+        self.instr = importlib.import_module(path_device).VNA(rm)
 
     
     def initialization(self):
@@ -80,7 +99,7 @@ class VNA_settings():
         self.power: Signal power
         """
 
-        self.instr.initialization(self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.IFBW.text(), self.power.text())
+        self.instr.initialization(self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.IFBW.text(), self.power.currentText())
 
 
     def read_s_param(self):
@@ -114,10 +133,10 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     win = QWidget()
     win.show()
-    vna = VNA_settings()
-    vna.VNA_connection('RS ZNB40 VNA')
-    vna.VNA.initialization()
 
+    vna = VNA_settings()
+    vna.connection('RS ZNB40 VNA')
+    vna.initialization()
 
     sys.exit(app.exec_())
 
