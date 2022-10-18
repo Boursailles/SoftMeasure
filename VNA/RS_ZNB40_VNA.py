@@ -188,10 +188,10 @@ class VNA:
         s22_phase = np.array([float(val) for val in s22_phase.split(',')])
             
 
-        self.s11 = {'dB': s11_dB, 'phase': s11_phase}
-        self.s12 = {'dB': s12_dB, 'phase': s12_phase}
-        self.s21 = {'dB': s21_dB, 'phase': s21_phase}
-        self.s22 = {'dB': s22_dB, 'phase': s22_phase}
+        self.s11 = {'mag': s11_dB, 'phase': s11_phase}
+        self.s12 = {'mag': s12_dB, 'phase': s12_phase}
+        self.s21 = {'mag': s21_dB, 'phase': s21_phase}
+        self.s22 = {'mag': s22_dB, 'phase': s22_phase}
 
 
     def off(self):
