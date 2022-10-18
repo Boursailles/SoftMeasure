@@ -15,7 +15,7 @@ from Save import *
 class Interface(QWidget):
     def __init__(self):
         # Main graphic window
-        QWidget.__init__(self)
+        super().__init__()
         self.setWindowTitle('SoftMeasure')
 
         # For now it is just a test
@@ -287,7 +287,7 @@ if __name__ == '__main__':
     app = QApplication.instance() 
     if not app:
         app = QApplication(sys.argv)
-        
+    
     soft = Interface()
     soft.show()
 
