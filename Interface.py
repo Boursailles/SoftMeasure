@@ -8,8 +8,6 @@ import numpy as np
 from VNA_settings import *
 from PS_settings import *
 from GM_settings import *
-
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Launch'))
 from Save import *
 
 
