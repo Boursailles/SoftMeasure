@@ -1,10 +1,10 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+from pyqt_led import Led
 import importlib
 import glob
 import os
-import sys
 
 
 
@@ -29,9 +29,11 @@ class PS_settings():
         """
         Display of PS widgets in the graphics interface
         """
-
+        
+        
         self.box = QGroupBox('Power Supply')
         self.box.setCheckable(True)
+        
         
         
         # Get the list of devices in PS folder
@@ -41,6 +43,20 @@ class PS_settings():
         self.device = QComboBox()
         self.device.addItems(list_device)
         self.device.setCurrentIndex(0)
+        self.led = Led(self, shape=Led.circle, off_color=Led.red, on_color=Led.green)
+        self.led.setFixedSize(self, 16)
+        self.led.turn_off()
+
+        def checkBoxChangedAction():
+            if self.box.isChecked():
+                self.led.set_off_color(Led.red)
+                self.led.turn_off()
+            else:
+                self.led.set_off_color(Led.black)
+                self.led.turn_off()
+        
+        self.box.toggled.connect(checkBoxChangedAction)
+
 
         self.I_start = QLineEdit()
         self.I_stop = QLineEdit()
@@ -49,19 +65,20 @@ class PS_settings():
         self.nb_step.setValue(2)
         
 
-        layout = QGridLayout()
+        layout = QGridLayout()        
 
         layout.addWidget(QLabel('Device:'), 0, 0)
         layout.addWidget(self.device, 0, 1)
+        layout.addWidget(self.led, 0, 2)
 
         layout.addWidget(QLabel('Start [A]:'), 1, 0)
-        layout.addWidget(self.I_start, 1, 1)
+        layout.addWidget(self.I_start, 1, 1, 1, 2)
             
         layout.addWidget(QLabel('Stop [A]:'), 2, 0)
-        layout.addWidget(self.I_stop, 2, 1)
+        layout.addWidget(self.I_stop, 2, 1, 1, 2)
             
         layout.addWidget(QLabel('Values number:'), 3, 0)
-        layout.addWidget(self.nb_step, 3, 1)
+        layout.addWidget(self.nb_step, 3, 1, 1, 2)
             
         self.box.setLayout(layout)
 
@@ -74,6 +91,8 @@ class PS_settings():
         path_device = 'PS.'+ self.device.currentText().replace(' ', '_') + '_PS'
         
         self.instr = importlib.import_module(path_device).PS(rm)
+
+        self.led.turn_on()
 
     
     def initialization(self):
@@ -96,4 +115,6 @@ class PS_settings():
         """
         Sets the PS off.
         """
+
         self.instr.off()
+        self.led.turn_off()

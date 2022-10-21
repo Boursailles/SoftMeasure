@@ -1,14 +1,8 @@
 import os
 import pyvisa as visa
 from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
 import numpy as np
-from VNA_settings import *
-from PS_settings import *
-from GM_settings import *
 from Save import *
-from Interface import *
 
 
 
@@ -29,7 +23,7 @@ class Valid:
         self.okay.clicked.connect(self.okay_event)
 
         self.cancel = QPushButton('Close')
-        self.cancel.clicked.connect(QApplication.closeAllWindows)
+        self.cancel.clicked.connect(self.parent.close)
 
         self.box = QGroupBox('')
         self.box.setFlat(True)
@@ -246,3 +240,6 @@ class Valid:
 
         if self.ps.box.isChecked():
             self.ps.off()
+
+        if self.gm.isChecked():
+            self.gm.off()

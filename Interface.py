@@ -1,10 +1,7 @@
 import sys
-import os
-import pyvisa as visa
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-import numpy as np
 from VNA_settings import *
 from PS_settings import *
 from GM_settings import *

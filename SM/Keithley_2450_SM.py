@@ -1,8 +1,3 @@
-import pyvisa as visa
-from PyQt5.QtWidgets import *
-import numpy as np
-
-
 ###############################################################################
 # This program is working with SM_settings.py file for SoftMeasure.
 # It contains useful code allowing to operate the Keithley SourceMeter (SM), model 2450.

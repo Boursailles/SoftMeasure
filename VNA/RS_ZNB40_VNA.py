@@ -1,5 +1,3 @@
-import pyvisa as visa
-from PyQt5.QtWidgets import *
 import numpy as np
 
 

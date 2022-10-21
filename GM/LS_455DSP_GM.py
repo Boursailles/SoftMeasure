@@ -1,9 +1,3 @@
-import pyvisa as visa
-from PyQt5.QtWidgets import *
-import numpy as np
-
-
-
 ###############################################################################
 # This program is working with GM_settings.py file for SoftMeasure.
 # It contains useful code allowing to operate the LakeShore (LS) GaussMeter (GM), model 455 DSP.

@@ -1,5 +1,4 @@
 import pyvisa as visa
-from PyQt5.QtWidgets import *
 from time import sleep
 
 
