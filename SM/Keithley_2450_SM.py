@@ -78,12 +78,3 @@ if __name__ == '__main__':
     import pyvisa as visa
 
     rm = visa.ResourceManager()
-    """
-    test = SM(rm)
-    
-    test.initialization('1e-8')
-    
-    test.read_val()
-    test.off()
-
-    print('valeur = ' + test.V)"""
