@@ -5,52 +5,71 @@
 
 
 
-class GM(object):
+class SM(object):
     def __init__(self, rm):
         """
         Keithley LS, model 2450
 
-        self.mag_value: Recorded magnetic field value
+        self.V: iSHE voltage
         ---------
         Parameter:
         rm: class
             Ressource Manager
         """
 
-        self.gm = None
-        self.mag_value = None
+        self.sm = None
+        self.V = None
 
         # Setup PyVISA instrument
-        self.address_gm = 'GPIB0::9::INSTR'
+        self.address_gm = 'SM_address'
 
-        self.gm = rm.open_resource(self.address_gm)
-        print('Connected to ' + self.gm.query("*IDN?"))
+        self.sm = rm.open_resource(self.address_sm)
+        print('Connected to ' + self.sm.query("*IDN?"))
 
 
-    def initialization(self, unit):
+    def initialization(self, I):
         """
-        GM initialization
+        SM initialization
 
         ---------
         Parameter:
-        unit: int
-            Number linked to the magnetic field unit (donner les valeurs)
+        I: str
+            Applied current in the SM
         """
 
-        self.gm.write('UNIT ' + str(unit+1))
+        # Reset instrument
+        self.sm.write('*RST')
+        # The instrument with working as a current sourcing
+        self.sm.write('SOUR:FUNC:CURR')
+        # Value of the applied current
+        self.sm.write('SOUR:CURR:RANG ' + I)
+        # Applying of the current
+        self.sm.write('OUTP ON')
 
 
-    def read_mag_field(self):
+    def read_val(self):
         """
-        Recording of magnetic field in the variable self.mag_value.
+        Recording of voltage value
         """
 
-        self.mag_value = self.gm.query("RDGFIELD?")[:-1]
+        self.V = self.sm.write('MEAS:VOLT?')
+
+    
+    def off(self):
+        self.sm.write('OUTP OFF')
+        self.sm.wrte('*RST')
 
         
         
 
 if __name__ == '__main__':
-    test = GM('GPIB0::9::INSTR')
-    print(test.gauss_measure())
-        
+    import pyvisa as visa
+
+    rm = visa.ResourceManager()
+    
+    test = SM(rm)
+    test.initialization('1e-8')
+    test.read_val()
+    test.off()
+
+    print(test.V)

@@ -5,6 +5,7 @@ from PyQt5.QtGui import *
 from VNA_settings import *
 from PS_settings import *
 from GM_settings import *
+from SM_settings import *
 from Validate import *
 
 
@@ -14,6 +15,7 @@ class Interface(QWidget):
         self.vna = None
         self.ps = None
         self.gm = None
+        self.sm = None
 
         # Main graphic window
         super().__init__()
@@ -37,6 +39,7 @@ class Interface(QWidget):
         self.vna = VNA_settings()
         self.ps = PS_settings()
         self.gm = GM_settings()
+        self.sm = SM_settings()
 
         self.setting_box = QGroupBox('Settings')
         self.setting_box.setFlat(True)
@@ -46,6 +49,7 @@ class Interface(QWidget):
         setting_layout.addWidget(self.vna.box, 0, 0)
         setting_layout.addWidget(self.ps.box, 0, 1)
         setting_layout.addWidget(self.gm.box, 1, 0)
+        setting_layout.addWidget(self.sm.box, 1, 1)
 
         self.setting_box.setLayout(setting_layout)
 
