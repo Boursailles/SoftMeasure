@@ -21,7 +21,7 @@ class SM(object):
         self.V = None
 
         # Setup PyVISA instrument
-        self.address_gm = 'SM_address'
+        self.address_sm = 'USB0::0x05E6::0x2450::04096941::INSTR'
 
         self.sm = rm.open_resource(self.address_sm)
         print('Connected to ' + self.sm.query("*IDN?"))
@@ -37,14 +37,21 @@ class SM(object):
             Applied current in the SM
         """
 
+        # If SM takes more than 2 min to answer, something's wrong
+        self.sm.timeout = 2 * 60 * 1e3
+
         # Reset instrument
         self.sm.write('*RST')
         # The instrument with working as a current sourcing
-        self.sm.write('SOUR:FUNC:CURR')
+        self.sm.write('SOUR:FUNC CURR')
         # Value of the applied current
         self.sm.write('SOUR:CURR:RANG ' + I)
         # Applying of the current
         self.sm.write('OUTP ON')
+
+        """self.sm.write('VOLT:AVER:COUNT 10')
+        self.sm.write('VOLT:AVER:TCON REP')
+        self.sm.write('VOLT:AVER ON')"""
 
 
     def read_val(self):
@@ -52,12 +59,17 @@ class SM(object):
         Recording of voltage value
         """
 
-        self.V = self.sm.write('MEAS:VOLT?')
+        # Make measurement
+        self.sm.query('MEAS:VOLT?')
+        # Take index of last measurement
+        idx = int(self.sm.query(':TRAC:ACT:END?'))
+        V = self.sm.query(f'TRAC:DATA? {idx}, {idx}')
+        self.V = float(V.replace('\n', ''))
 
     
     def off(self):
         self.sm.write('OUTP OFF')
-        self.sm.wrte('*RST')
+        self.sm.write('*RST')
 
         
         
@@ -66,10 +78,12 @@ if __name__ == '__main__':
     import pyvisa as visa
 
     rm = visa.ResourceManager()
-    
+    """
     test = SM(rm)
+    
     test.initialization('1e-8')
+    
     test.read_val()
     test.off()
 
-    print(test.V)
+    print('valeur = ' + test.V)"""
