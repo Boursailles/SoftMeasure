@@ -44,7 +44,7 @@ class VNA:
         print('Connected to ' + self.vna.query("*IDN?"))
 
 
-    def initialization(self, f_start, f_stop, nb_point, IFBW, power):
+    def initialization(self, f_start, f_stop, nb_point, IFBW, power, sw_time):
         """
         VNA initialization
         
@@ -67,6 +67,7 @@ class VNA:
         self.f_stop = f_stop
         self.IFBW = IFBW
         self.power = power
+        self.sw_time = sw_time
 
         
         self.vna.write("*RST")
@@ -128,6 +129,7 @@ class VNA:
             
         # Measure settings
         self.vna.write("SWE:POIN " + str(self.nb_point))
+        self.vna.write("SWE: TIME " + str(self.sw_time))
         self.vna.write("FREQ:STAR " + str(self.f_start))
         self.vna.write("FREQ:STOP " + str(self.f_stop))
         self.vna.write("BWID " + str(self.IFBW))

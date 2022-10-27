@@ -18,7 +18,6 @@ class SM(object):
         """
 
         self.sm = None
-        self.V = None
 
         # Setup PyVISA instrument
         self.address_sm = 'USB0::0x05E6::0x2450::04096941::INSTR'
@@ -64,7 +63,7 @@ class SM(object):
         # Take index of last measurement
         idx = int(self.sm.query(':TRAC:ACT:END?'))
         V = self.sm.query(f'TRAC:DATA? {idx}, {idx}')
-        self.V = float(V.replace('\n', ''))
+        return float(V.replace('\n', ''))
 
     
     def off(self):

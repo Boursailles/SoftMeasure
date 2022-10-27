@@ -3,6 +3,9 @@ import pyvisa as visa
 from PyQt5.QtCore import *
 import numpy as np
 from Save import *
+from QTreads import *
+from PyQt5.QtWidgets import QPushButton
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, Qt
 
 
 
@@ -94,6 +97,11 @@ class Valid:
             with open(os.path.join(self.path, 'H_values.txt'), 'w') as f:
                 f.write('Magnetic Field [' + self.gm.unit.currentText() + ']\n')
 
+        if self.sm.box.isChecked():
+            # Creating iSHE voltage file.
+            with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'w') as f:
+                f.write('iSHE Voltage [V]\n')
+
 
     def connection(self):
         self.rm = visa.ResourceManager()
@@ -101,24 +109,26 @@ class Valid:
         if self.vna.box.isChecked():
             try:
                 self.vna.connection(self.rm)
-            
             except:
-                # Search how and when to put it
                 return self.msg_error('VNA')
 
         if self.ps.box.isChecked():
             try:
                 self.ps.connection(self.rm)
-
             except:
                 return self.msg_error('PS')
 
         if self.gm.box.isChecked():
             try:
                 self.gm.connection(self.rm)
-
             except:
                 return self.msg_error('GM')
+
+        if self.sm.box.isChecked():
+            try:
+                self.sm.connection(self.rm)
+            except:
+                return self.msg_error('SM')
 
         # Possibility to have last_status?
         '''if self.ps.box.isChecked():
@@ -157,6 +167,12 @@ class Valid:
                 self.off()
                 return self.msg_error('GM')
 
+        if self.sm.box.isChecked():
+            try:
+                self.sm.initialization()
+            except:
+                return self.msg_error('SM')
+
 
     def meas_record(self):
         if self.ps.box.isChecked():
@@ -188,6 +204,18 @@ class Valid:
 
 
         def meas_loop():
+            if self.sm.box.isChecked():
+                self.thread = QThread()
+                self.sm_qt = SM_QT()
+
+                self.sm_qt.moveToThread(self.thread)
+                V_iSHE = self.thread.started.connect(self.ps.meas)
+
+                self.sm_qt.finished.connect(self.thread.quit)
+                self.sm_qt.finished.connect(self.sm_qt.deleteLater)
+                self.thread.finished.connect(self.thread.deleteLater)
+
+
             if self.vna.box.isChecked():
                 try:
                     s_param = self.vna.read_s_param()
@@ -209,6 +237,7 @@ class Valid:
                         self.ps.off()
                     return self.msg_error('VNA')
 
+
             if self.gm.box.isChecked():
                 try:
                     H_val = self.gm.read_mag_field()
@@ -219,7 +248,12 @@ class Valid:
                     self.vna.off()
                     self.ps.off()
                     return self.msg_error('GM')
-     
+            
+
+            if self.sm.box.isChecked():
+                with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'a') as f:
+                            f.write(V_iSHE + '\n')
+
 
     def msg_error(self, device):
         if device == 'VNA':
@@ -228,11 +262,16 @@ class Valid:
             word = 'power supply'
         elif device == 'GM':
             word = 'gaussmeter'
+        elif device == 'SM':
+            word = 'sourcemeter'
 
         self.kill = True
 
         QMessageBox.about(self.parent, 'Warning', f'Connection issue with {word}.')
-        
+
+
+
+
 
     def off(self):
         if self.vna.box.isChecked():
@@ -243,3 +282,6 @@ class Valid:
 
         if self.gm.isChecked():
             self.gm.off()
+
+        if self.sm.isChecked():
+            self.sm.off()

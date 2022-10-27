@@ -60,6 +60,7 @@ class VNA_settings():
         self.nb_step = QSpinBox()
         self.nb_step.setMaximum(10000)
         self.nb_step.setValue(2)
+        self.sw_time = QLineEdit()
         self.IFBW = QLineEdit()
         self.power = QComboBox()
         self.power.addItems(['-10', '0', '10'])
@@ -81,11 +82,14 @@ class VNA_settings():
         layout.addWidget(QLabel('Values number:'), 3, 0)
         layout.addWidget(self.nb_step, 3, 1, 1, 2)
 
-        layout.addWidget(QLabel('IFBW [kHz]:'), 4, 0)
-        layout.addWidget(self.IFBW, 4, 1, 1, 2)
+        layout.addWidget(QLabel('Sweep time [s]:'), 4, 0)
+        layout.addWidget(self.sw_time, 4, 1, 1, 2)
 
-        layout.addWidget(QLabel('Power [dBm]:'), 5, 0)
-        layout.addWidget(self.power, 5, 1, 1, 2)
+        layout.addWidget(QLabel('IFBW [kHz]:'), 5, 0)
+        layout.addWidget(self.IFBW, 5, 1, 1, 2)
+
+        layout.addWidget(QLabel('Power [dBm]:'), 6, 0)
+        layout.addWidget(self.power, 6, 1, 1, 2)
 
         self.box.setLayout(layout)
 
@@ -117,7 +121,7 @@ class VNA_settings():
         self.power: Signal power
         """
 
-        self.instr.initialization(self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.IFBW.text(), self.power.currentText())
+        self.instr.initialization(self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.IFBW.text(), self.power.currentText(), self.sw_time.text())
 
 
     def read_s_param(self):

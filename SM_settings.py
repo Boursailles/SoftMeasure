@@ -56,6 +56,7 @@ class SM_settings():
 
 
         self.I = QLineEdit()
+        self.meas_time = QLineEdit()
 
         layout = QGridLayout()
 
@@ -65,6 +66,9 @@ class SM_settings():
 
         layout.addWidget(QLabel('Applied current [A]:'), 1, 0)
         layout.addWidget(self.I, 1, 1, 1, 2)
+
+        layout.addWidget(QLabel('Measurement period [s]:'), 2, 0)
+        layout.addWidget(self.meas_time, 2, 1, 1, 2)
         
         self.box.setLayout(layout)
 
@@ -97,8 +101,7 @@ class SM_settings():
 
     def read_val(self):
         """
-        Recording of voltage in the following variable:
-        self.instr.V
+        Recording of voltage value.
         """
         
         self.instr.read_val()
