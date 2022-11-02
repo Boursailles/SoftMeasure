@@ -12,35 +12,21 @@ from Validate import *
 
 class Interface(QWidget):
     def __init__(self):
-        self.vna = None
-        self.ps = None
-        self.gm = None
-        self.sm = None
+        self.vna = VNA_settings()
+        self.ps = PS_settings()
+        self.gm = GM_settings()
+        self.sm = SM_settings()
+        
 
         # Main graphic window
         super().__init__()
         self.setWindowTitle('SoftMeasure')
         
 
-        layout = QGridLayout()
-
-        # Settings display
-        self.widget_settings()
-        layout.addWidget(self.setting_box, 0, 0)
-
-        # Validation display
-        self.widget_valid()
-        layout.addWidget(self.valid.box, 1, 0)
-
-        self.setLayout(layout)
+        self.layout = QGridLayout()
 
 
     def widget_settings(self):
-        self.vna = VNA_settings()
-        self.ps = PS_settings()
-        self.gm = GM_settings()
-        self.sm = SM_settings()
-
         self.setting_box = QGroupBox('Settings')
         self.setting_box.setFlat(True)
 
@@ -53,9 +39,16 @@ class Interface(QWidget):
 
         self.setting_box.setLayout(setting_layout)
 
+        self.layout.addWidget(self.setting_box, 0, 0)
+        self.setLayout(self.layout)
+
 
     def widget_valid(self):
-        self.valid = Valid(self, self.vna, self.ps, self.gm)
+        self.valid = Valid(self)
+        self.valid.widget()
+
+        self.layout.addWidget(self.valid.box, 1, 0)
+        self.setLayout(self.layout)
 
 
 
@@ -67,6 +60,8 @@ if __name__ == '__main__':
         app = QApplication(sys.argv)
     
     soft = Interface()
+    soft.widget_valid()
+    soft.widget_settings()
     soft.show()
 
     sys.exit(app.exec_())
