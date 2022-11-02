@@ -229,27 +229,28 @@ class Valid:
 
         def meas_loop():
             if self.parent.sm.box.isChecked():
-                self.thread = QThread()
+                self.sm_thread = QThread()
                 self.sm_qt = SM_QT()
 
-                self.sm_qt.moveToThread(self.thread)
-                V_iSHE = self.thread.started.connect(self.parent.ps.meas)
+                self.sm_qt.moveToThread(self.sm_thread)
+                V_iSHE = self.sm_thread.started.connect(self.parent.ps.meas)
 
-                self.sm_qt.finished.connect(self.thread.quit)
+                self.sm_qt.finished.connect(self.sm_thread.quit)
                 self.sm_qt.finished.connect(self.sm_qt.deleteLater)
-                self.thread.finished.connect(self.thread.deleteLater)
+                self.sm_thread.finished.connect(self.sm_thread.deleteLater)
 
 
             if self.parent.vna.box.isChecked():
                 try:
                     s_param = self.parent.vna.read_s_param()
+                    self.sm_tread.start()
                     for s in self.sij:
                         path = os.path.join(self.s_path, s)
                         with open(os.path.join(path, 'Magnitude.txt'), 'a') as f:
-                            f.write(str([val for val in getattr(s_param, s)['mag']]) + '\n')
+                            f.write(str([val for val in getattr(s_param, s)['mag']])[1: -1] + '\n')
                         
                         with open(os.path.join(path, 'Phase.txt'), 'a') as f:
-                            f.write(str([val for val in getattr(s_param, s)['phase']]) + '\n')
+                            f.write(str([val for val in getattr(s_param, s)['phase']])[1: -1] + '\n')
 
                 except:
                     self.parent.vna.connection()
