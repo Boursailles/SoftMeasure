@@ -5,6 +5,7 @@ from pyqt_led import Led
 import os
 import importlib
 import glob
+import numpy as np
 
 
 
@@ -30,6 +31,16 @@ class VNA_settings():
         Display of VNA widgets in the graphics interface
         """
 
+        self.params_path = os.path.join(os.getcwd(), 'VNA\parameters.txt')
+
+        if os.path.exists(self.params_path) == False:
+            header = 'device\tstarting_frequency\tending_frequency\tstep_number\ttime_sweep\tIFBW\tpower'
+            values = str(['0', '0', '1', '2', '2', '1', '0'])[1: -1].replace(', ', '\t')
+            with open(self.params_path, 'w') as f:
+                f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
+
+        self.params = np.genfromtxt(self.params_path, names=True, delimiter='\t')
+
         self.box = QGroupBox('Vector Network Analyzer')
         self.box.setCheckable(True)
 
@@ -39,7 +50,7 @@ class VNA_settings():
         
         self.device = QComboBox()
         self.device.addItems(list_device)
-        self.device.setCurrentIndex(0)
+        self.device.setCurrentIndex(int(self.params['device']))
         self.led = Led(self, shape=Led.circle, off_color=Led.red, on_color=Led.green)
         self.led.setFixedSize(self, 16)
         self.led.turn_off()
@@ -56,15 +67,24 @@ class VNA_settings():
 
 
         self.f_start = QLineEdit()
+        self.f_start.setText(str(self.params['starting_frequency']))
+
         self.f_stop = QLineEdit()
+        self.f_stop.setText(str(self.params['ending_frequency']))
+
         self.nb_step = QSpinBox()
         self.nb_step.setMaximum(10000)
-        self.nb_step.setValue(2)
+        self.nb_step.setValue(int(self.params['step_number']))
+
         self.sw_time = QLineEdit()
+        self.sw_time.setText(str(self.params['time_sweep']))
+
         self.IFBW = QLineEdit()
+        self.IFBW.setText(str(self.params['IFBW']))
+
         self.power = QComboBox()
         self.power.addItems(['-10', '0', '10'])
-        self.power.setCurrentIndex(0)
+        self.power.setCurrentIndex(int(self.params['power']))
         
 
         layout = QGridLayout()
@@ -92,6 +112,13 @@ class VNA_settings():
         layout.addWidget(self.power, 6, 1, 1, 2)
 
         self.box.setLayout(layout)
+
+
+    def save_params(self):
+        header = 'device\tstarting_frequency\tending_frequency\tstep_number\ttime_sweep\tIFBW\tpower'
+        values = str([str(self.device.currentIndex()), self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.sw_time.text(), self.IFBW.text(), str(self.power.currentIndex())])[1: -1].replace(', ', '\t')
+        with open(self.params_path, 'w') as f:
+            f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
 
 
     def connection(self, rm):

@@ -5,6 +5,7 @@ from pyqt_led import Led
 import importlib
 import glob
 import os
+import numpy as np
 
 
 
@@ -29,11 +30,20 @@ class PS_settings():
         """
         Display of PS widgets in the graphics interface
         """
+
+        self.params_path = os.path.join(os.getcwd(), 'PS\parameters.txt')
+
+        if os.path.exists(self.params_path) == False:
+            header = 'device\tstarting_current\tending_current\tstep_number'
+            values = str(['0', '0', '1', '2'])[1: -1].replace(', ', '\t')
+            with open(self.params_path, 'w') as f:
+                f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
+
+        self.params = np.genfromtxt(self.params_path, names=True, delimiter='\t')
         
         
         self.box = QGroupBox('Power Supply')
         self.box.setCheckable(True)
-        
         
         
         # Get the list of devices in PS folder
@@ -42,7 +52,7 @@ class PS_settings():
         
         self.device = QComboBox()
         self.device.addItems(list_device)
-        self.device.setCurrentIndex(0)
+        self.device.setCurrentIndex(int(self.params['device']))
         self.led = Led(self, shape=Led.circle, off_color=Led.red, on_color=Led.green)
         self.led.setFixedSize(self, 16)
         self.led.turn_off()
@@ -59,10 +69,14 @@ class PS_settings():
 
 
         self.I_start = QLineEdit()
+        self.I_start.setText(str(self.params['starting_current']))
+
         self.I_stop = QLineEdit()
+        self.I_stop.setText(str(self.params['ending_current']))
+
         self.nb_step = QSpinBox()
         self.nb_step.setMaximum(10000)
-        self.nb_step.setValue(2)
+        self.nb_step.setValue(int(self.params['step_number']))
         
 
         layout = QGridLayout()        
@@ -81,6 +95,13 @@ class PS_settings():
         layout.addWidget(self.nb_step, 3, 1, 1, 2)
             
         self.box.setLayout(layout)
+
+
+    def save_params(self):
+        header = 'device\tstarting_current\tending_current\tstep_number'
+        values = str([str(self.device.currentIndex()), self.I_start.text(), self.I_stop.text(), self.nb_step.text()])[1: -1].replace(', ', '\t')
+        with open(self.params_path, 'w') as f:
+            f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
 
 
     def connection(self, rm):

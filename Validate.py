@@ -4,7 +4,7 @@ from PyQt5.QtCore import *
 import numpy as np
 from Save import *
 from QThreads import *
-from PyQt5.QtWidgets import QPushButton
+from PyQt5.QtWidgets import QPushButton, QSizePolicy
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, Qt
 from Interface import *
 
@@ -30,12 +30,22 @@ class Valid:
 
         self.progressbar = QProgressBar()
         self.progressbar.setVisible(False)
+        retainsize = self.progressbar.sizePolicy()
+        retainsize.setRetainSizeWhenHidden(True)
+        self.progressbar.setSizePolicy(retainsize)
 
         self.estimated_time = QLabel('Estimated time:')
         self.estimated_time.setVisible(False)
+        retainsize = self.estimated_time.sizePolicy()
+        retainsize.setRetainSizeWhenHidden(True)
+        self.estimated_time.setSizePolicy(retainsize)
 
         self.display_time = QLabel('')
         self.display_time.setVisible(False)
+        retainsize = self.display_time.sizePolicy()
+        retainsize.setRetainSizeWhenHidden(True)
+        self.display_time.setSizePolicy(retainsize)
+
 
         layout = QGridLayout()
 
@@ -50,11 +60,37 @@ class Valid:
 
 
     def okay_event(self):
-
-        self.launch_progressbar()
-    
-
         self.path = self.save.pathEdit.text()
+
+        if self.parent.ps.box.isChecked() and (abs(float(self.parent.ps.I_start.text())) > 38 or abs(float(self.parent.ps.I_stop.text())) > 38):
+            QMessageBox.about(self.parent, 'Warning', 'The current limit of the Power Supply is 38 A.')
+            return
+
+
+        def continue_push():
+            self.kill = False
+
+        def cancel_push():
+            self.kill = False
+
+        if self.parent.ps.box.isChecked() and (abs(float(self.parent.ps.I_start.text())) >= 16 or abs(float(self.parent.ps.I_stop.text())) >= 16):
+            msgbox = QMessageBox()
+            msgbox.setWindowTitle('Warning')
+            msgbox.setText('The applied current of the Power Supply is high, do you want to continue?')
+            msgbox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+
+            return_value = msgbox.exec()
+            if return_value == QMessageBox.No:
+                return
+
+
+            
+
+        self.save_params()
+        if self.kill:
+            self.kill = False
+            return
+
         self.folder()
         if self.kill:
             self.kill = False
@@ -71,6 +107,24 @@ class Valid:
             return
         
         self.meas_record()
+
+
+    def save_params(self):
+        try:
+            if self.parent.vna.box.isChecked():
+                self.parent.vna.save_params()
+
+            if self.parent.ps.box.isChecked():
+                self.parent.ps.save_params()
+
+            if self.parent.gm.box.isChecked():
+                self.parent.gm.save_params()
+
+            if self.parent.sm.box.isChecked():
+                self.parent.sm.save_params()
+        
+        except:
+            self.kill = True
 
 
     def folder(self):
@@ -199,6 +253,8 @@ class Valid:
 
 
     def meas_record(self):
+        self.launch_progressbar()
+
         if self.parent.ps.box.isChecked():
             amps_list = np.linspace(self.parent.ps.I_start, self.parent.ps.I_stop, self.parent.ps.nb_step)
 
@@ -209,6 +265,8 @@ class Valid:
                             f.write(str(amps) + '\n')
                 
                 except:
+                    self.end_progressbar()
+
                     self.parent.ps.connection()
                     self.parent.ps.off()
                     try:
@@ -221,6 +279,7 @@ class Valid:
                 meas_loop()
 
                 if self.kill:
+                    self.end_progressbar()
                     return
         
         else:
@@ -253,6 +312,8 @@ class Valid:
                             f.write(str([val for val in getattr(s_param, s)['phase']])[1: -1] + '\n')
 
                 except:
+                    self.end_progressbar()
+
                     self.parent.vna.connection()
                     self.parent.vna.off()
                     try:
@@ -284,15 +345,15 @@ class Valid:
         if device == 'VNA':
             word = 'VNA'
         elif device == 'PS':
-            word = 'power supply'
+            word = 'Power Supply'
         elif device == 'GM':
-            word = 'gaussmeter'
+            word = 'GaussMeter'
         elif device == 'SM':
-            word = 'sourcemeter'
+            word = 'SourceMeter'
 
         self.kill = True
 
-        QMessageBox.about(self.parent, 'Warning', f'Connection issue with {word}.')
+        QMessageBox.about(self.parent, 'Error', f'Connection issue with {word}.')
 
 
     def launch_progressbar(self):
@@ -361,7 +422,6 @@ class Valid:
         self.progressbar.setVisible(False)
         self.estimated_time.setVisible(False)
         self.display_time.setVisible(False)
-
 
 
     def off(self):

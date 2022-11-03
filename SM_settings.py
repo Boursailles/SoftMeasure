@@ -5,6 +5,7 @@ from pyqt_led import Led
 import os
 import importlib
 import glob
+import numpy as np
 
 
 
@@ -30,6 +31,17 @@ class SM_settings():
         Display of SM widgets in the graphics interface
         """
 
+        self.params_path = os.path.join(os.getcwd(), 'SM\parameters.txt')
+
+        if os.path.exists(self.params_path) == False:
+            header = 'device\tcurrent\tmeasurement_period'
+            values = str(['0', '0', '1'])[1: -1].replace(', ', '\t')
+            with open(self.params_path, 'w') as f:
+                f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
+
+        self.params = np.genfromtxt(self.params_path, names=True, delimiter='\t')
+
+
         self.box = QGroupBox('SourceMeter')
         self.box.setCheckable(True)
 
@@ -39,7 +51,7 @@ class SM_settings():
         
         self.device = QComboBox()
         self.device.addItems(list_device)
-        self.device.setCurrentIndex(0)
+        self.device.setCurrentIndex(int(self.params['device']))
         self.led = Led(self, shape=Led.circle, off_color=Led.red, on_color=Led.green)
         self.led.setFixedSize(self, 16)
         self.led.turn_off()
@@ -56,7 +68,10 @@ class SM_settings():
 
 
         self.I = QLineEdit()
+        self.I.setText(str(self.params['current']))
+
         self.meas_time = QLineEdit()
+        self.meas_time.setText(str(self.params['measurement_period']))
 
         layout = QGridLayout()
 
@@ -70,7 +85,15 @@ class SM_settings():
         layout.addWidget(QLabel('Measurement period [s]:'), 2, 0)
         layout.addWidget(self.meas_time, 2, 1, 1, 2)
         
+        
         self.box.setLayout(layout)
+
+
+    def save_params(self):
+        header = 'device\tcurrent\tmeasurement_period'
+        values = str([str(self.device.currentIndex()), self.I.text(), self.meas_time.text()])[1: -1].replace(', ', '\t')
+        with open(self.params_path, 'w') as f:
+            f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
 
 
     def connection(self, rm):

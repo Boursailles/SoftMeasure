@@ -5,6 +5,7 @@ from pyqt_led import Led
 import os
 import importlib
 import glob
+import numpy as np
 
 
 
@@ -29,6 +30,17 @@ class GM_settings:
         """
         Display of GM widgets in the graphics interface
         """
+        
+        self.params_path = os.path.join(os.getcwd(), 'GM\parameters.txt')
+
+        if os.path.exists(self.params_path) == False:
+            header = 'device\tunit'
+            values = str(['0', '0'])[1: -1].replace(', ', '\t')
+            with open(self.params_path, 'w') as f:
+                f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
+
+        self.params = np.genfromtxt(self.params_path, names=True, delimiter='\t')
+
 
         self.box = QGroupBox('GaussMeter')
         self.box.setCheckable(True)
@@ -53,11 +65,11 @@ class GM_settings:
         
         self.device = QComboBox()
         self.device.addItems(list_device)
-        self.device.setCurrentIndex(0)
+        self.device.setCurrentIndex(int(self.params['device']))
 
         self.unit = QComboBox()
         self.unit.addItems(['G', 'T', 'Oe', 'A.m\u207B\u00B9'])
-        self.unit.setCurrentIndex(0)
+        self.unit.setCurrentIndex(int(self.params['unit']))
 
 
         layout = QGridLayout()
@@ -70,6 +82,13 @@ class GM_settings:
         layout.addWidget(self.unit, 1, 1, 1, 2)
 
         self.box.setLayout(layout)
+
+
+    def save_params(self):
+        header = 'device\tunit'
+        values = str([str(self.device.currentIndex()), str(self.unit.currentIndex())])[1: -1].replace(', ', '\t')
+        with open(self.params_path, 'w') as f:
+            f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
 
 
     def connection(self, rm):

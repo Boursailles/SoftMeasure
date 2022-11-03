@@ -1,0 +1,2 @@
+device	starting_current	ending_current	step_number
+0	38	10.0	2
