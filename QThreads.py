@@ -36,3 +36,16 @@ class Progressbar_QT(QObject):
             self.change_value.emit(i)
 
         self.finished.emit()
+
+    
+class Plot_QT(QObject):
+    change_value = pyqtSignal(int)
+    finished = pyqtSignal()
+    def __init__(self):
+        super().__init__()
+
+    def add_curve(self):
+        for i in range(50):
+            sleep(0.1)
+            self.change_value.emit(i)
+        self.finished.emit()

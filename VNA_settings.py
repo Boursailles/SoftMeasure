@@ -31,6 +31,7 @@ class VNA_settings():
         Display of VNA widgets in the graphics interface
         """
 
+        # File where all parameters in the GUI are saved.
         self.params_path = os.path.join(os.getcwd(), 'VNA\parameters.txt')
 
         if os.path.exists(self.params_path) == False:
@@ -51,6 +52,8 @@ class VNA_settings():
         self.device = QComboBox()
         self.device.addItems(list_device)
         self.device.setCurrentIndex(int(self.params['device']))
+
+        # Creation of a led in order to indicate if the instrument is connected or not
         self.led = Led(self, shape=Led.circle, off_color=Led.red, on_color=Led.green)
         self.led.setFixedSize(self, 16)
         self.led.turn_off()
@@ -65,7 +68,7 @@ class VNA_settings():
         
         self.box.toggled.connect(checkBoxChangedAction)
 
-
+        # Creation of all parameters in the GUI
         self.f_start = QLineEdit()
         self.f_start.setText(str(self.params['starting_frequency']))
 
@@ -115,6 +118,10 @@ class VNA_settings():
 
 
     def save_params(self):
+        """
+        Saving of all parameters in order to be used at the next opening.
+        """
+
         header = 'device\tstarting_frequency\tending_frequency\tstep_number\ttime_sweep\tIFBW\tpower'
         values = str([str(self.device.currentIndex()), self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.sw_time.text(), self.IFBW.text(), str(self.power.currentIndex())])[1: -1].replace(', ', '\t')
         with open(self.params_path, 'w') as f:
@@ -146,6 +153,7 @@ class VNA_settings():
         self.nb_step: Step number
         self.IFBW: Intermediate Frequency Band Width
         self.power: Signal power
+        self.sw_time: Time sweep
         """
 
         self.instr.initialization(self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.IFBW.text(), self.power.currentText(), self.sw_time.text())
@@ -171,7 +179,8 @@ class VNA_settings():
         Sets the VNA off.
         """
 
-        self.instr.off()
+        if self.instr:
+            self.instr.off()
         self.led.turn_off()
 
 

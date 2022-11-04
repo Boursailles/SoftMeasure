@@ -31,6 +31,7 @@ class GM_settings:
         Display of GM widgets in the graphics interface
         """
         
+        # File where all parameters in the GUI are saved.
         self.params_path = os.path.join(os.getcwd(), 'GM\parameters.txt')
 
         if os.path.exists(self.params_path) == False:
@@ -44,6 +45,17 @@ class GM_settings:
 
         self.box = QGroupBox('GaussMeter')
         self.box.setCheckable(True)
+
+
+        # Get the list of devices in PS folder
+        list_device = glob.glob('GM/*.py')
+        list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -3] for val in list_device]
+        
+        self.device = QComboBox()
+        self.device.addItems(list_device)
+        self.device.setCurrentIndex(int(self.params['device']))
+
+        # Creation of a led in order to indicate if the instrument is connected or not
         self.led = Led(self, shape=Led.circle, off_color=Led.red, on_color=Led.green)
         self.led.setFixedSize(self, 16)
         self.led.turn_off()
@@ -58,15 +70,7 @@ class GM_settings:
         
         self.box.toggled.connect(checkBoxChangedAction)
 
-
-        # Get the list of devices in PS folder
-        list_device = glob.glob('GM/*.py')
-        list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -3] for val in list_device]
-        
-        self.device = QComboBox()
-        self.device.addItems(list_device)
-        self.device.setCurrentIndex(int(self.params['device']))
-
+        # Creation of all parameters in the GUI
         self.unit = QComboBox()
         self.unit.addItems(['G', 'T', 'Oe', 'A.m\u207B\u00B9'])
         self.unit.setCurrentIndex(int(self.params['unit']))
@@ -85,6 +89,10 @@ class GM_settings:
 
 
     def save_params(self):
+        """
+        Saving of all parameters in order to be used at the next opening.
+        """
+
         header = 'device\tunit'
         values = str([str(self.device.currentIndex()), str(self.unit.currentIndex())])[1: -1].replace(', ', '\t')
         with open(self.params_path, 'w') as f:
@@ -93,13 +101,11 @@ class GM_settings:
 
     def connection(self, rm):
         """
-        Connection to the chosen GM (see the linked GM file)
+        Connection to the chosen GM (see the linked GM file).
         """
 
         path_device = 'GM.'+ self.device.currentText().replace(' ', '_') + '_GM'
-        
         self.instr = importlib.import_module(path_device).GM(rm)
-
         self.led.turn_off()
 
     
@@ -122,7 +128,7 @@ class GM_settings:
 
     def off(self):
         """
-        Sets the VNA off.
+        Sets the GM off.
         """
 
         self.led.turn_off()

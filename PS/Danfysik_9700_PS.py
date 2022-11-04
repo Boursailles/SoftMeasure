@@ -15,11 +15,13 @@ class PS:
         """
         Danfysik PS, model 9700
 
+        self.I_max: Maximal value of current to applicate
         self.I_start: Starting current
         self.f_stop: Stopping current
         self.nb_step: Step number of current values
         """
 
+        self.I_max = 38
         self.ps = None
         self.I_start = None
         self.I_stop = None
@@ -28,7 +30,7 @@ class PS:
 
         # Setup PyVISA instrument
         self.address_ps = 'ASRL1::INSTR'
-
+        
         rm = visa.ResourceManager()
         self.ps = rm.open_resource(self.address_ps)
         print('Connected to ' + self.ps.query("*IDN?"))

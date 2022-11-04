@@ -31,6 +31,7 @@ class PS_settings():
         Display of PS widgets in the graphics interface
         """
 
+        # File where all parameters in the GUI are saved.
         self.params_path = os.path.join(os.getcwd(), 'PS\parameters.txt')
 
         if os.path.exists(self.params_path) == False:
@@ -53,6 +54,8 @@ class PS_settings():
         self.device = QComboBox()
         self.device.addItems(list_device)
         self.device.setCurrentIndex(int(self.params['device']))
+
+        # Creation of a led in order to indicate if the instrument is connected or not
         self.led = Led(self, shape=Led.circle, off_color=Led.red, on_color=Led.green)
         self.led.setFixedSize(self, 16)
         self.led.turn_off()
@@ -67,7 +70,7 @@ class PS_settings():
         
         self.box.toggled.connect(checkBoxChangedAction)
 
-
+        # Creation of all parameters in the GUI
         self.I_start = QLineEdit()
         self.I_start.setText(str(self.params['starting_current']))
 
@@ -98,6 +101,10 @@ class PS_settings():
 
 
     def save_params(self):
+        """
+        Saving of all parameters in order to be used at the next opening.
+        """
+        
         header = 'device\tstarting_current\tending_current\tstep_number'
         values = str([str(self.device.currentIndex()), self.I_start.text(), self.I_stop.text(), self.nb_step.text()])[1: -1].replace(', ', '\t')
         with open(self.params_path, 'w') as f:
@@ -106,13 +113,16 @@ class PS_settings():
 
     def connection(self, rm):
         """
-        Connection to the chosen PS (see the linked PS file)
+        Connection to the chosen PS (see the linked PS file).
+        
+        ---------
+        Parameter:
+        rm: class
+            Ressource Manager
         """
 
         path_device = 'PS.'+ self.device.currentText().replace(' ', '_') + '_PS'
-        
         self.instr = importlib.import_module(path_device).PS(rm)
-
         self.led.turn_on()
 
     
@@ -137,5 +147,6 @@ class PS_settings():
         Sets the PS off.
         """
 
-        self.instr.off()
+        if self.instr:
+            self.instr.off()
         self.led.turn_off()
