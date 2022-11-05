@@ -2,6 +2,7 @@ import sys
 import matplotlib
 matplotlib.use('Qt5Agg')
 from time import sleep
+from threading import Timer
 
 import sys
 from PyQt5.QtCore import *
@@ -57,33 +58,82 @@ class plot_gui:
         self.box.setLayout(self.layout)
 
 
-    def S_curve(self, data):
+    def S_curve(self, watch_file):
+        self.watch_file = watch_file
         self.S_trace, = self.S_plot.graph.axes.plot([], [], 'r')
         self.S_plot.graph.draw()
 
+        
+        self.watcher = Watcher(watch_file)
         self.thread = QThread()
-        self.plot_qt = Plot_QT()
 
-        self.plot_qt.moveToThread(self.thread)
-        self.thread.started.connect(self.plot_qt.add_curve)
+        self.watcher.moveToThread(self.thread)
+        self.thread.started.connect(self.watcher.watch)
 
-        self.plot_qt.change_value.connect(self.test)
+        self.watcher.change_value.connect(self.test)
 
-        self.plot_qt.finished.connect(self.thread.quit)
+        self.watcher.finished.connect(self.thread.quit)
 
-        self.plot_qt.finished.connect(self.plot_qt.deleteLater)
+        self.watcher.finished.connect(self.watcher.stop_watching)
 
-        self.plot_qt.finished.connect(self.thread.deleteLater)
+        self.watcher.finished.connect(self.watcher.deleteLater)
 
-        self.x = np.linspace(0, 5, 50)
-        self.y = np.linspace(-140, -20, 50)
+        self.watcher.finished.connect(self.thread.deleteLater)
 
         self.thread.start()
 
 
-    def test(self, i):
-        self.S_trace.set_data(self.x[:i+1], self.y[:i+1])
+    def test(self):
+        data = np.genfromtxt(self.watch_file, names=True)
+        self.S_trace.set_data(data['f'], data['S'])
         self.S_plot.graph.draw()
+        print('changed')
+
+
+
+class Watcher(QObject):
+    running = True
+    refresh_delay_secs = 1
+    change_value = pyqtSignal()
+    finished = pyqtSignal()
+
+    # Constructor
+    def __init__(self, watch_file):
+        super().__init__()
+        self._cached_stamp = 0
+        self.filename = watch_file
+
+    # Look for changes
+    def look(self):
+        stamp = os.stat(self.filename).st_mtime
+        if stamp != self._cached_stamp:
+            self._cached_stamp = stamp
+            # File has changed, so do something...
+            print('File changed')
+            self.change_value.emit()
+
+    # Keep watching in a loop        
+    def watch(self):
+        while self.running: 
+            try: 
+                # Look for changes
+                sleep(self.refresh_delay_secs) 
+                self.look() 
+            except KeyboardInterrupt: 
+                print('\nDone') 
+                break 
+            except FileNotFoundError:
+                print('File not Found')
+                # Action on file not found
+                break
+            '''except: 
+                print('Unhandled error: %s' % sys.exc_info()[0])
+                break'''
+
+    def stop_watching(self):
+        print('Watch is over')
+        self.running = False
+        
 
 
 class Canva_2D(FigureCanvasQTAgg):
@@ -129,7 +179,13 @@ if __name__ == '__main__':
     layout.addWidget(plot_gui.box, 0, 0)
     win.setLayout(layout)
     win.show()
-    plot_gui.S_curve(1)
 
+    watch_file = r'C:\Users\guill\OneDrive\Bureau\test.txt'.replace('\\', '/')
+
+    plot_gui.S_curve(watch_file)
+    Timer(20, plot_gui.watcher.stop_watching).start()
+    
+
+   
 
     sys.exit(app.exec_())
