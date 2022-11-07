@@ -19,13 +19,13 @@ from PyQt5.QtWidgets import *
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
 
 
 
 class Plot_GUI(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, xdata):
         super().__init__()
+        self.xdata = xdata
         self.parent = parent
         self.widget()
 
@@ -62,23 +62,16 @@ class Plot_GUI(QWidget):
         self.box.setLayout(self.layout)
 
 
-    def S_curve(self, watch_Sfile):
+    def S_QT(self, watch_Sfile):
         self.watch_Sfile = watch_Sfile
-        self.S_trace, = self.S_plot.graph.axes.plot([], [], 'b')
-        self.S_plot.graph.draw()
-
-        
         self.Swatcher = Watcher(watch_Sfile)
         self.Sthread = QThread()
 
         self.Swatcher.moveToThread(self.Sthread)
-        self.Sthread.started.connect(self.Swatcher.watch)
 
-        self.Swatcher.change_value.connect(self.read_Sdata)
+        self.Swatcher.read_Sdata.connect(self.read_Sdata)
 
-        self.Swatcher.finished.connect(self.Sthread.quit)
-
-        self.Swatcher.finished.connect(self.Swatcher.stop_watching)
+        '''self.Swatcher.finished.connect(self.Sthread.quit)'''
 
         self.Swatcher.finished.connect(self.Swatcher.deleteLater)
 
@@ -86,24 +79,17 @@ class Plot_GUI(QWidget):
 
         self.Sthread.start()
 
-    
-    def V_curve(self, watch_Vfile):
-        self.watch_Vfile = watch_Vfile
-        self.V_trace, = self.V_plot.graph.axes.plot([], [], 'r')
-        self.V_plot.graph.draw()
 
-        
+    def V_QT(self, watch_Vfile):
+        self.watch_Vfile = watch_Vfile
         self.Vwatcher = Watcher(watch_Vfile)
         self.Vthread = QThread()
 
         self.Vwatcher.moveToThread(self.Vthread)
-        self.Vthread.started.connect(self.Vwatcher.watch)
 
-        self.Vwatcher.change_value.connect(self.read_Vdata)
+        self.Vwatcher.read_Vdata.connect(self.read_Vdata)
 
-        self.Vwatcher.finished.connect(self.Vthread.quit)
-
-        self.Vwatcher.finished.connect(self.Vwatcher.stop_watching)
+        '''self.Vwatcher.finished.connect(self.Vthread.quit)'''
 
         self.Vwatcher.finished.connect(self.Vwatcher.deleteLater)
 
@@ -112,63 +98,49 @@ class Plot_GUI(QWidget):
         self.Vthread.start()
 
 
-    def read_Sdata(self):
-        data = np.genfromtxt(self.watch_Sfile, names=True)
-        self.S_trace.set_data(data['f'], data['S'])
+    def S_curve(self, color):
+        self.S_trace, = self.S_plot.graph.axes.plot([], [], c=color)
+        self.S_plot.graph.draw()
+
         
+    def V_curve(self, color):
+        self.V_trace, = self.V_plot.graph.axes.plot([], [], c=color)
+        self.V_plot.graph.draw()
+
+
+    def read_Sdata(self):
+        ydata = np.genfromtxt(self.watch_Sfile, names=True)
+
+        self.S_trace.set_data(self.xdata[:len(ydata)], ydata)
         self.S_plot.graph.axes.relim()
         self.S_plot.graph.axes.autoscale_view()
         self.S_plot.graph.draw()
 
     
-    def read_Vdata(self):
-        data = np.genfromtxt(self.watch_Vfile, names=True)
-        self.V_trace.set_data(data['f'], data['V'])
+    def read_Vdata(self, val):
+        '''with open(self.watch_Vfile, 'a') as f:
+                            f.write(val + '\n')
+        '''
+        ydata = np.genfromtxt(self.watch_Vfile, names=True)
+
+        self.V_trace.set_data(self.xdata[:len(ydata)], ydata)
+        self.V_plot.graph.axes.relim()
+        self.V_plot.graph.axes.autoscale_view()
         self.V_plot.graph.draw()
 
 
+
 class Watcher(QObject):
-    running = True
-    refresh_delay_secs = 1
-    change_value = pyqtSignal()
+    read_Vdata = pyqtSignal(str)
+    read_Sdata = pyqtSignal()
+    change_color = pyqtSignal(str)
     finished = pyqtSignal()
 
-    # Constructor
     def __init__(self, watch_file):
+        self.watch_file = watch_file
         super().__init__()
-        self._cached_stamp = 0
-        self.filename = watch_file
 
-    # Look for changes
-    def look(self):
-        stamp = os.stat(self.filename).st_mtime
-        if stamp != self._cached_stamp:
-            self._cached_stamp = stamp
-            # File has changed, so do something...
-            print('File changed')
-            self.change_value.emit()
 
-    # Keep watching in a loop        
-    def watch(self):
-        while self.running: 
-            try: 
-                # Look for changes
-                sleep(self.refresh_delay_secs) 
-                self.look() 
-            except KeyboardInterrupt: 
-                print('\nDone') 
-                break 
-            except FileNotFoundError:
-                print('File not Found')
-                # Action on file not found
-                break
-            '''except: 
-                print('Unhandled error: %s' % sys.exc_info()[0])
-                break'''
-
-    def stop_watching(self):
-        print('Watch is over')
-        self.running = False
         
 
 class Canva_2D(FigureCanvasQTAgg):
@@ -176,6 +148,7 @@ class Canva_2D(FigureCanvasQTAgg):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         super(Canva_2D, self).__init__(fig)
+
 
 
 class Graph_2D(QWidget):
