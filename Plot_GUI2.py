@@ -142,7 +142,6 @@ class Watcher(QObject):
 
 
         
-
 class Canva_2D(FigureCanvasQTAgg):
     def __init__(self, width, height, dpi):
         fig = Figure(figsize=(width, height), dpi=dpi)
@@ -186,8 +185,6 @@ if __name__ == '__main__':
 
     plot_gui.S_curve(watch_Sfile)
     Timer(20, plot_gui.Swatcher.stop_watching).start()
-    
 
-   
 
     sys.exit(app.exec_())
