@@ -3,7 +3,7 @@ import pyvisa as visa
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QPushButton, QSizePolicy
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, Qt
-from time import sleep
+from time import sleep, time
 import numpy as np
 from Save import *
 from Interface import *
@@ -63,57 +63,61 @@ class Valid:
 
 
     def okay_event(self):
-        self.meas_record(r'C:\Users\guill\OneDrive\Bureau\test.txt'.replace('\\', '/'))
+        self.meas_record(r'C:\Users\Guillaume\Documents\Python\test.txt'.replace('\\', '/'))
 
 
     def meas_record(self, file):
+        # Create Plot GUI, with V and S graphs
         self.plot_gui = Plot_GUI(1, self.xdata)
-
         self.plot_gui.V_QT(file)
-
         self.plot_gui.S_QT(file)
 
+        # Creating the QThread of the SourceMeter
         self.sm_thread = QThread()
         self.sm_qt = SM_QT()
-               
         self.sm_qt.moveToThread(self.sm_thread)
 
-        '''self.sm_thread.started.connect(self.meas)'''
-
-        # The measurement is connected to the recording
+        # When the measurent is done, read recorded data
         self.sm_qt.meas_done.connect(self.plot_gui.Vwatcher.read_Vdata.emit)
+        self.sm_qt.meas_loop.connect(self.meas_loop)
 
+        # Laucnh a measurement set
         self.sm_qt.launch_meas.connect(self.sm_qt.meas)
-              
+        
+        # End of measurements
+        self.sm_qt.finished.connect(self.sm_thread.quit)
         self.sm_qt.finished.connect(self.sm_qt.deleteLater)
         self.sm_thread.finished.connect(self.sm_thread.deleteLater)
         
-
+        # Set of colors
         normalize = mcolors.Normalize(vmin=0, vmax=5)
         colormap = cm.jet
-
         self.colors = [colormap(normalize(n)) for n in range(5)]
 
-        self.idx_max = 5
-        idx_loop = 0
         
-        '''for i in range(5):
-            self.plot_gui.S_curve(self.colors[i])
-            self.plot_gui.V_curve(self.colors[i])'''
-
+        # Start sm measurement
         self.sm_thread.start()
+        self.meas_loop(0)
 
-        for i in range(5):
-            if i == 1:
-                self.plot_gui.S_curve('b')
-                self.plot_gui.V_curve('b')
-            if i == 1:
-                self.plot_gui.S_curve('r')
-                self.plot_gui.V_curve('r')
-            if i == 1:
-                self.plot_gui.S_curve('g')
-                self.plot_gui.V_curve('g')
-            self.sm_qt.launch_meas.emit(i)
+
+    def meas_loop(self, idx):
+        print('COUCOU ' + str(idx))
+        if idx == 0:
+            self.plot_gui.S_curve('b')
+            self.plot_gui.V_curve('b')
+
+        elif idx == 1:
+            self.plot_gui.S_curve('r')
+            self.plot_gui.V_curve('r')
+         
+        elif idx == 2:
+            self.plot_gui.S_curve('g')
+            self.plot_gui.V_curve('g')
+
+        else:
+            self.sm_thread.quit()
+
+        self.sm_qt.launch_meas.emit()
 
         
 
@@ -129,16 +133,19 @@ class SM_QT(QObject):
     finished = pyqtSignal()
     meas_done = pyqtSignal(str)
     meas_loop = pyqtSignal(int)
-    launch_meas = pyqtSignal(int)
+    launch_meas = pyqtSignal()
     def __init__(self):
         super().__init__()
-
+        self.idx = 0
     
-    def meas(self, idx_loop):
-        for i in range(5):
+    def meas(self):
+        for i in range(2):
             print(i)
             sleep(1)
             self.meas_done.emit(str(i))
+
+        self.idx += 1
+        self.meas_loop.emit(self.idx)
         
 
 
