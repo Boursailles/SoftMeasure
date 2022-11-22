@@ -23,10 +23,10 @@ from matplotlib.figure import Figure
 
 
 class Plot_GUI(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, xdata):
         super().__init__()
         self.parent = parent
-        self.xdata = []
+        self.xdata = xdata
         self.widget()
 
         layout = QGridLayout()
@@ -39,24 +39,8 @@ class Plot_GUI(QWidget):
         self.box = QGroupBox('Plots')
         self.layout = QGridLayout()
 
-        if self.parent.ps.box.isChecked():
-            self.V_plot = Graph_2D('f [GHz]', 'V [µV]')
-            if self.parent.vna.box.isChecked():
-                self.xdata = np.linspace(float(self.parent.vna.f_start.text()), float(self.parent.vna.f_stop.text()), int(self.vna.nb_step.text()))
-
-                self.S_plot = Graph_2D('f [GHz]', '$S_{21}$ [dB]')
-                self.layout.addWidget(self.S_plot, 0, 0)
-                self.layout.addWidget(self.V_plot, 1, 0)
-                
-            else:
-                self.xdata = np.linspace(float(self.parent.ps.I_start.text()), float(self.parent.ps.I_stop.text()), int(self.ps.nb_step.text()))
-                self.layout.addWidget(self.V_plot, 0, 0)
-
-        elif self.parent.vna.box.isChecked():
-            self.xdata = np.linspace(float(self.parent.vna.f_start.text()), float(self.parent.vna.f_stop.text()), int(self.vna.nb_step.text()))
-
-            self.S_plot = Graph_2D('f [GHz]', '$S_{21}$ [dB]', (0, 5), (-140, -20))
-            self.layout.addWidget(self.S_plot, 0, 0)
+        self.S_plot = Graph_2D('f [GHz]', '$S_{21}$ [dB]')
+        self.V_plot = Graph_2D('f [GHz]', 'V [µV]')
 
         self.layout.addWidget(self.S_plot, 0, 0)
         self.layout.addWidget(self.V_plot, 1, 0)

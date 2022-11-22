@@ -7,7 +7,7 @@ from time import sleep, time
 import numpy as np
 from Save import *
 from Interface import *
-from Plot_GUI2 import *
+from Plot_GUI2_test import *
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
@@ -102,23 +102,14 @@ class Valid:
 
     def meas_loop(self, idx):
         print('COUCOU ' + str(idx))
-        if idx == 0:
-            self.plot_gui.S_curve('b')
-            self.plot_gui.V_curve('b')
+        if idx < 5:
+            self.plot_gui.S_curve(self.colors[idx])
+            self.plot_gui.V_curve(self.colors[idx])
 
-        elif idx == 1:
-            self.plot_gui.S_curve('r')
-            self.plot_gui.V_curve('r')
-         
-        elif idx == 2:
-            self.plot_gui.S_curve('g')
-            self.plot_gui.V_curve('g')
-
+            self.sm_qt.launch_meas.emit()
+            
         else:
             self.sm_thread.quit()
-
-        self.sm_qt.launch_meas.emit()
-
         
 
         '''self.plot_gui.Swatcher.read_Sdata.emit()'''
