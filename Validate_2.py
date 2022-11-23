@@ -3,7 +3,7 @@ import pyvisa as visa
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QPushButton, QSizePolicy
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, Qt
-from time import sleep
+from time import sleep, process_time
 import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
@@ -240,8 +240,15 @@ class Valid:
         # Create Plotting window
         if self.parent.vna.box.isChecked() or self.parent.sm.box.isChecked():
             self.plot_gui = Plot_GUI(self.parent)
+            if self.parent.vna.box.isChecked():
+                self.nb_step = int(float(self.parent.vna.nb_step.text()))
+                self.plot_gui.S_QT(os.path.join(self.s_path, 'S21/Magnitude.txt'))
+
+            else:
+                self.nb_step = 1
 
         if self.parent.sm.box.isChecked():
+            self.plot_gui.V_QT(os.path.join(self.path, 'V-iSHE_values.txt'))
             self.sm_qt()
 
         self.launch_progressbar()
@@ -284,14 +291,14 @@ class Valid:
         # Starting other instruments measurements
         else:
             self.colors = ['b']
-            self.meas_loop(0)
+            """self.meas_loop(0)"""
 
-        if self.parent.sm.box.isChecked():
-            self.sm_qt.sm_thread.quit()
+        '''if self.parent.sm.box.isChecked():
+            self.sm_thread.quit()
             self.plot_gui.Vthread.quit()
 
         if self.parent.vna.box.isChecked():
-            self.plot_gui.Sthread.quit()
+            self.plot_gui.Sthread.quit()'''
         
 
     def meas_loop(self, idx_color):
@@ -302,33 +309,35 @@ class Valid:
         if self.parent.vna.box.isChecked():
             self.plot_gui.S_curve(self.colors[idx_color])
 
+            if self.parent.sm.box.isChecked():
+                print(process_time())
+                self.sm_qt.launch_meas.emit()
+
             try:
-                s_param = self.parent.vna.read_s_param()
+                self.parent.vna.read_s_param()
+                print("COUCOU")
                 
             except:
                 if self.parent.sm.box.isChecked():
-                    self.sm_qt.sm_thread.quit()
+                    self.sm_thread.quit()
                 self.end_progressbar()
 
-                self.parent.vna.connection()
+                self.parent.vna.connection(self.rm)
                 self.off()
                 return self.msg_error('VNA')
 
-            # Le tester ici, à voir avec *OPC?
-            if self.parent.sm.box.isChecked():
-                self.sm_qt.meas()
 
             # Recording of S-parameters
             for s in self.sij:
                 path = os.path.join(self.s_path, s)
                 with open(os.path.join(path, 'Magnitude.txt'), 'a') as f:
-                    f.write(str([val for val in getattr(s_param, s)['mag']])[1: -1] + '\n')
+                    f.write(str([val for val in getattr(self.parent.vna.instr, s)['mag']])[1: -1] + '\n')
                        
                 with open(os.path.join(path, 'Phase.txt'), 'a') as f:
-                    f.write(str([val for val in getattr(s_param, s)['phase']])[1: -1] + '\n')
+                    f.write(str([val for val in getattr(self.parent.vna.instr, s)['phase']])[1: -1] + '\n')
 
             # Plot of S curve
-            plot_gui.Swatcher.read_data.emit(s_param.S21['mag'])
+            self.plot_gui.Swatcher.read_Sdata.emit()
 
             #Start GM measurement and recording
             if self.parent.gm.box.isChecked():
@@ -369,10 +378,10 @@ class Valid:
         time_sm = 0
 
         if self.parent.vna.box.isChecked():
-            time_vna = int(self.parent.vna.sw_time.text())
+            time_vna = int(float(self.parent.vna.sw_time.text()))
 
         if self.parent.sm.box.isChecked():
-            time_sm = int(self.parent.sm.meas_time.text())
+            time_sm = int(float(self.parent.sm.meas_time.text()))
 
             if self.parent.vna.box.isChecked():
                 time_sm *= int(self.parent.vna.nb_step.text())
@@ -433,7 +442,7 @@ class Valid:
     def sm_qt(self):
         # Creating the QThread of the SourceMeter
         self.sm_thread = QThread()
-        self.sm_qt = SM_QT()
+        self.sm_qt = SM_QT(self.parent.sm.instr, float(self.parent.sm.meas_time.text()), self.nb_step, float(self.parent.vna.sw_time.text()))
         self.sm_qt.moveToThread(self.sm_thread)
 
         # When the measurent is done, read recorded data
@@ -504,18 +513,24 @@ class SM_QT(QObject):
     meas_done = pyqtSignal(str)
     meas_loop = pyqtSignal(int)
     launch_meas = pyqtSignal()
-    def __init__(self, sm):
+    def __init__(self, sm, meas_time, nb_step, time_wait):
         super().__init__()
         self.sm = sm
+        self.meas_time = meas_time
+        self.nb_step = nb_step
+        self.time_wait = time_wait
         self.idx = 0
 
     
-    def meas(self, meas_time, nb_step):
-        V = np.zeros_like(nb_step)
-        for i in range(nb_step):
+    def meas(self):
+        V = np.zeros(self.nb_step)
+        # Time waiting to be coordinate with the VNA
+        sleep(self.time_wait + self.time_wait/self.nb_step + self.meas_time/2)
+        for i in range(self.nb_step):
+            print(i)
             V[i] = self.sm.read_val()
-            self.meas_done.emit(V[i])
-            sleep(meas_time)
+            self.meas_done.emit(str(V[i]))
+            sleep(self.meas_time - 0.1)
 
         self.idx += 1
         self.meas_loop.emit(self.idx)

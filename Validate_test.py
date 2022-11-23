@@ -63,7 +63,7 @@ class Valid:
 
 
     def okay_event(self):
-        self.meas_record(r'C:\Users\Guillaume\Documents\Python\test.txt'.replace('\\', '/'))
+        self.meas_record(r'C:\Users\MagTeam\Desktop\Test.txt'.replace('\\', '/'))
 
 
     def meas_record(self, file):
@@ -130,7 +130,7 @@ class SM_QT(QObject):
         self.idx = 0
     
     def meas(self):
-        for i in range(2):
+        for i in range(20):
             print(i)
             sleep(1)
             self.meas_done.emit(str(i))

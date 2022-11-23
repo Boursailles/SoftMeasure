@@ -67,7 +67,7 @@ class VNA:
         self.f_stop = f_stop
         self.IFBW = IFBW
         self.power = power
-        self.sw_time = sw_time
+        self.sw_time = str(2*float(sw_time))
 
         
         self.vna.write("*RST")
@@ -128,11 +128,11 @@ class VNA:
             
             
         # Measure settings
-        self.vna.write("SWE:POIN " + str(self.nb_point))
-        self.vna.write("SWE: TIME " + str(self.sw_time))
-        self.vna.write("FREQ:STAR " + str(self.f_start))
-        self.vna.write("FREQ:STOP " + str(self.f_stop))
-        self.vna.write("BWID " + str(self.IFBW))
+        self.vna.write("SWE:POIN " + self.nb_point)
+        self.vna.write("SWE:TIME " + self.sw_time)
+        self.vna.write("FREQ:STAR " + self.f_start + "GHz")
+        self.vna.write("FREQ:STOP " + self.f_stop + "GHz")
+        self.vna.write("BWID " + self.IFBW + "kHz")
 
         self.vna.write("INIT:CONT:ALL ON; *WAI")
         self.vna.write("SOUR:POW " + str(self.power))
@@ -188,10 +188,10 @@ class VNA:
         s22_phase = np.array([float(val) for val in s22_phase.split(',')])
             
 
-        self.s11 = {'mag': s11_dB, 'phase': s11_phase}
-        self.s12 = {'mag': s12_dB, 'phase': s12_phase}
-        self.s21 = {'mag': s21_dB, 'phase': s21_phase}
-        self.s22 = {'mag': s22_dB, 'phase': s22_phase}
+        self.S11 = {'mag': s11_dB, 'phase': s11_phase}
+        self.S12 = {'mag': s12_dB, 'phase': s12_phase}
+        self.S21 = {'mag': s21_dB, 'phase': s21_phase}
+        self.S22 = {'mag': s22_dB, 'phase': s22_phase}
 
 
     def off(self):
