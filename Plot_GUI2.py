@@ -37,26 +37,25 @@ class Plot_GUI(QWidget):
 
     def widget(self):
         self.box = QGroupBox('Plots')
-        self.layout = QGridLayout()
+        layout = QGridLayout()
 
         if self.parent.vna.box.isChecked():
             self.xdata = np.linspace(float(self.parent.vna.f_start.text()), float(self.parent.vna.f_stop.text()), int(self.parent.vna.nb_step.text()))
-
             self.S_plot = Graph_2D('f [GHz]', '$S_{21}$ [dB]')
-            self.layout.addWidget(self.S_plot, 0, 0)
+            layout.addWidget(self.S_plot, 0, 0)
 
             if self.parent.sm.box.isChecked():
                 self.V_plot = Graph_2D('f [GHz]', '$V_{iSHE}$ [µV]')
-                self.layout.addWidget(self.V_plot, 1, 0)
+                layout.addWidget(self.V_plot, 1, 0)
 
         
         elif self.parent.ps.box.isChecked() and self.parent.sm.box.isChecked():
             self.xdata = np.linspace(float(self.parent.ps.I_start.text()), float(self.parent.ps.I_stop.text()), int(self.parent.ps.nb_step.text()))
             self.V_plot = Graph_2D('f [GHz]', '$V_{iSHE}$ [µV]')
-            self.layout.addWidget(self.V_plot, 0, 0)
+            layout.addWidget(self.V_plot, 0, 0)
 
 
-        self.box.setLayout(self.layout)
+        self.box.setLayout(layout)
 
 
     def S_QT(self, watch_Sfile):
@@ -66,9 +65,9 @@ class Plot_GUI(QWidget):
 
         self.Swatcher.moveToThread(self.Sthread)
 
-        self.Swatcher.read_Sdata.connect(self.read_Sdata)
+        self.Swatcher.read_data.connect(self.read_Sdata)
 
-        '''self.Swatcher.finished.connect(self.Sthread.quit)'''
+        self.Swatcher.finished.connect(self.Sthread.quit)
 
         self.Swatcher.finished.connect(self.Swatcher.deleteLater)
 
@@ -84,9 +83,9 @@ class Plot_GUI(QWidget):
 
         self.Vwatcher.moveToThread(self.Vthread)
 
-        self.Vwatcher.read_Vdata.connect(self.read_Vdata)
+        self.Vwatcher.read_data.connect(self.read_Vdata)
 
-        '''self.Vwatcher.finished.connect(self.Vthread.quit)'''
+        self.Vwatcher.finished.connect(self.Vthread.quit)
 
         self.Vwatcher.finished.connect(self.Vwatcher.deleteLater)
 
@@ -96,17 +95,18 @@ class Plot_GUI(QWidget):
 
 
     def S_curve(self, color):
-        self.S_trace, = self.S_plot.graph.axes.plot([], [], c=color)
+        self.S_trace, = self.S_plot.graph.axes.plot([], [], c=color, marker='o')
         self.S_plot.graph.draw()
 
         
     def V_curve(self, color):
-        self.V_trace, = self.V_plot.graph.axes.plot([], [], c=color)
+        self.V_trace, = self.V_plot.graph.axes.plot([], [], c=color, marker='o')
         self.V_plot.graph.draw()
 
 
-    def read_Sdata(self):
+    def read_Sdata(self, idx):
         ydata = np.genfromtxt(self.watch_Sfile, skip_header=1)
+        ydata = ydata[idx*len(self.xdata):]
 
         self.S_trace.set_data(self.xdata[:len(ydata)], ydata)
         self.S_plot.graph.axes.relim()
@@ -114,22 +114,26 @@ class Plot_GUI(QWidget):
         self.S_plot.graph.draw()
 
     
-    def read_Vdata(self, val):
-        '''with open(self.watch_Vfile, 'a') as f:
-                            f.write(val + '\n')
-        '''
+    def read_Vdata(self, idx):
         ydata = np.genfromtxt(self.watch_Vfile, skip_header=1)
+        
+        try:
+            ydata = ydata[idx*len(self.xdata):]
+            self.V_trace.set_data(self.xdata[:len(ydata)], ydata)
+            self.V_plot.graph.axes.relim()
+            self.V_plot.graph.axes.autoscale_view()
+            self.V_plot.graph.draw()
+        
+        except TypeError:
+            self.V_trace.set_data(self.xdata[0], ydata)
 
-        self.V_trace.set_data(self.xdata[:len(ydata)], ydata)
-        self.V_plot.graph.axes.relim()
-        self.V_plot.graph.axes.autoscale_view()
-        self.V_plot.graph.draw()
+        except IndexError:
+            self.V_trace.set_data(self.xdata[0], ydata)
 
 
 
 class Watcher(QObject):
-    read_Vdata = pyqtSignal(str)
-    read_Sdata = pyqtSignal()
+    read_data = pyqtSignal(int)
     change_color = pyqtSignal(str)
     finished = pyqtSignal()
 

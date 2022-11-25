@@ -93,6 +93,7 @@ class Valid:
         normalize = mcolors.Normalize(vmin=0, vmax=5)
         colormap = cm.jet
         self.colors = [colormap(normalize(n)) for n in range(5)]
+        print(self.colors)
 
         
         # Start sm measurement
@@ -130,7 +131,7 @@ class SM_QT(QObject):
         self.idx = 0
     
     def meas(self):
-        for i in range(20):
+        for i in range(2):
             print(i)
             sleep(1)
             self.meas_done.emit(str(i))

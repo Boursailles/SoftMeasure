@@ -185,8 +185,6 @@ class VNA_settings():
 
 
 
-
-
 if __name__ == '__main__':
     import sys
 

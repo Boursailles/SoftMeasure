@@ -27,13 +27,11 @@ class PS:
         self.I_stop = None
         self.nb_step = None
         self.epsilon = 4e-4
+        self._current_ppm = 0
 
         # Setup PyVISA instrument
         self.address_ps = 'ASRL1::INSTR'
-        
-        rm = visa.ResourceManager()
         self.ps = rm.open_resource(self.address_ps)
-        print('Connected to ' + self.ps.query("*IDN?"))
 
         # set attributes
         self.ps.baud_rate = 115200
@@ -42,6 +40,8 @@ class PS:
         self.ps.parity = visa.constants.Parity['none']
         self.ps.read_termination = '\n\r'
         self.ps.write_termination = '\r'
+
+        print('Connected to ' + self.ps.query("*IDN?"))
 
     
     def initialization(self):
@@ -53,7 +53,6 @@ class PS:
         self.remote()
         self.enable()
 
-        self._current_ppm = 0
         self.set_amps(0)
 
 
@@ -70,10 +69,10 @@ class PS:
         while abs(delta_I) > self.epsilon:
             I_temp += delta_I/2
             delta_I = I_stop - I_temp
-            self.set_current(I_temp)
+            self.set_amps(I_temp)
             sleep(0.5)
 
-        self.set_current(I_stop)
+        self.set_amps(I_stop)
         
         
     def set_amps(self, amps):
@@ -150,7 +149,8 @@ class PS:
 
 if __name__ == '__main__':
     try:
-        D9700 = PS()
+        rm = visa.ResourceManager()
+        D9700 = PS(rm)
         D9700.off()
     except Exception as e:
         print("Exception ({}): {}".format(type(e), str(e)))

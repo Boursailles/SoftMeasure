@@ -2,6 +2,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from pyqt_led import Led
+from time import sleep
 import os
 import importlib
 import glob
@@ -145,8 +146,6 @@ class SM_settings():
         if self.instr:
             self.instr.off()
         self.led.turn_off()
-
-
 
 
 

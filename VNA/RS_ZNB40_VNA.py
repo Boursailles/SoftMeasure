@@ -32,10 +32,10 @@ class VNA:
         self.nb_point = None
         self.IFBW = None
         self.power = None
-        self.s11 =None
-        self.s12 = None
-        self.s21 = None
-        self.s22 = None
+        self.S11 =None
+        self.S12 = None
+        self.S21 = None
+        self.S22 = None
 
         # Setup PyVISA instrument
         self.address_vna = 'TCPIP0::ZNB40-72-101845::inst0::INSTR'

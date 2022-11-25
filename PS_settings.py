@@ -131,7 +131,6 @@ class PS_settings():
         PS initialization.
         """
 
-        QMessageBox.about(self, 'Reminder', 'Is the cooling system on?')
         self.instr.initialization()
 
 
