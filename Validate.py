@@ -1,7 +1,7 @@
 import os
 import pyvisa as visa
 from PyQt5.QtCore import *
-from PyQt5.QtWidgets import QPushButton, QSizePolicy
+from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, Qt
 from time import sleep, time
 from statistics import mean 
