@@ -125,42 +125,57 @@ class VNA:
         self.vna.write("DISP:TRAC:Y:AUTO ONCE, 'Trc6'")
         self.vna.write("DISP:TRAC:Y:AUTO ONCE, 'Trc7'")
         self.vna.write("DISP:TRAC:Y:AUTO ONCE, 'Trc8'")
-            
-            
-        # Measure settings
-        self.vna.write("SWE:POIN " + self.nb_point)
-        self.vna.write("SWE:TIME " + self.sw_time)
-        self.vna.write("FREQ:STAR " + self.f_start + "GHz")
-        self.vna.write("FREQ:STOP " + self.f_stop + "GHz")
-        self.vna.write("BWID " + self.IFBW + "kHz")
 
+        self.vna.write("BWID " + IFBW + "kHz")
+        self.vna.write("SOUR:POW " + str(power))
+
+        self.meas_settings(self.nb_point, self.f_start, self.f_stop)
+            
+        
+    def meas_settings(self, nb_point, f_start, f_stop):
+        # Measure settings
+        self.vna.write("SWE:POIN " + nb_point)
+        '''self.vna.write("SWE:TIME " + sw_time)'''
+        self.vna.write("FREQ:STAR " + f_start + "GHz")
+        self.vna.write("FREQ:STOP " + f_stop + "GHz")
+
+        '''
         self.vna.write("INIT:CONT:ALL ON; *WAI")
-        self.vna.write("SOUR:POW " + str(self.power))
+        self.vna.write("INIT:CONT:ALL ON; *WAI")
+        self.vna.write("SOUR:POW " + str(self.power))'''
+
+        self.vna.write("DISP:TRAC1:Y:AUTO ONCE, 'Trc1'")
+        self.vna.write("DISP:TRAC2:Y:AUTO ONCE, 'Trc2'")
+        self.vna.write("DISP:TRAC3:Y:AUTO ONCE, 'Trc3'")
+        self.vna.write("DISP:TRAC4:Y:AUTO ONCE, 'Trc4'")
+
+        self.vna.write("FORM:DATA ASCii")
+        self.vna.write("INIT:CONT:ALL ON")
         
 
     def read_s_param(self):
         """
         Recording of S-parameters in the following dictionaries:
-        self.instr.s11
-        self.instr.s12
-        self.instr.s21
-        self.instr.s22
+        self.instr.S11
+        self.instr.S12
+        self.instr.S21
+        self.instr.S22
 
         Each are sorted like:
-        self.instr.sij = {'dB': array, 'phase': array}
+        self.instr.Sij = {'dB': array, 'phase': array}
         """
 
-        self.vna.write("INIT:CONT OFF; :INIT; *WAI")
+        '''self.vna.write("INIT:CONT OFF; :INIT; *WAI")
 
-        self.vna.write("INIT:CONT:ALL ON")
+        self.vna.write("INIT:CONT:ALL ON")'''
             
-        self.vna.write("DISP:TRAC1:Y:AUTO ONCE, 'Trc1'")
+        '''self.vna.write("DISP:TRAC1:Y:AUTO ONCE, 'Trc1'")
         self.vna.write("DISP:TRAC2:Y:AUTO ONCE, 'Trc2'")
         self.vna.write("DISP:TRAC3:Y:AUTO ONCE, 'Trc3'")
         self.vna.write("DISP:TRAC4:Y:AUTO ONCE, 'Trc4'")
                     
 
-        self.vna.write("FORM:DATA ASCii")
+        self.vna.write("FORM:DATA ASCii")'''
 
         s11_dB = self.vna.query("CALC:DATA:TRAC? 'Trc1', FDAT")[:-1]
         s11_phase = self.vna.query("CALC:DATA:TRAC? 'Trc5', FDAT")[:-1]

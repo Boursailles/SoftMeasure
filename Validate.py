@@ -195,21 +195,6 @@ class Valid:
             except:
                 return self.msg_error('SM')
 
-        # Possibility to have last_status?
-        '''if self.ps.box.isChecked():
-            try:
-                self.ps.connection(self.rm)
-
-            except visa.VisaIOError as e:
-                QMessageBox.about(self, "Warning", "Connection issue with electromagnet\nError Codes: " + self.rm.last_status+"\t" + self.rm.visalib.last_status)
-
-        if self.gm.box.isChecked():
-            try:
-                self.gm.connection(self.rm)
-
-            except visa.VisaIOError as e:
-                QMessageBox.about(self, "Warning", "Connection issue with gaussmeter\nError Codes: " + self.rm.last_status+"\t" + self.rm.visalib.last_status)'''
-
 
     def initialization(self):
         if self.parent.vna.box.isChecked():
@@ -318,8 +303,6 @@ class Valid:
         self.meas_qt.off.connect(self.off)
         self.meas_qt.msg_error.connect(self.msg_error)
         self.meas_qt.meas_loop.connect(self.meas_loop)
-        '''if self.parent.sm.box.isChecked():
-            self.meas_qt.sm_qt_quit.connect(self.sm_thread.quit)'''
 
         self.meas_thread.started.connect(self.meas_qt.meas_record)
 
@@ -344,115 +327,13 @@ class Valid:
             self.plot_gui.V_QT(os.path.join(self.path, 'V-iSHE_values.txt'))
             self.sm_qt()
 
-
         self.launch_progressbar()
         self.meas_thread.start()
 
 
-    def meas_loop(self, color, idx):
-        if self.parent.sm.box.isChecked():
-            self.plot_gui.V_curve(color)
-            
-        # Start VNA measurement
-        if self.parent.vna.box.isChecked():
-            self.plot_gui.S_curve(color)
-
-            if self.parent.sm.box.isChecked():
-                self.sm_qt.launch_meas.emit(idx)
-
-            try:
-                self.vna_qt.launch_meas.emit(idx)
-                
-            except:
-                if self.parent.sm.box.isChecked():
-                    self.sm_thread.quit()
-                self.end_progressbar()
-
-                self.parent.vna.connection(self.rm)
-                self.off()
-                return self.msg_error('VNA')
-
-            '''
-            # Recording of S-parameters
-            for s in self.sij:
-                path = os.path.join(self.s_path, s)
-                with open(os.path.join(path, 'Magnitude.txt'), 'a') as f:
-                    f.write(str([val for val in getattr(self.parent.vna.instr, s)['mag']])[1: -1] + '\n')
-                       
-                with open(os.path.join(path, 'Phase.txt'), 'a') as f:
-                    f.write(str([val for val in getattr(self.parent.vna.instr, s)['phase']])[1: -1] + '\n')
-
-            # Plot of S curve
-            self.plot_gui.Swatcher.read_Sdata.emit()'''
-
-            #Start GM measurement and recording
-            if self.parent.gm.box.isChecked():
-                try:
-                    H_val = self.parent.gm.read_mag_field()
-                    with open(os.path.join(self.path, 'H_values.txt'), 'a') as f:
-                            f.write(H_val + '\n')
-                    
-                except:
-                    self.off()
-                    return self.msg_error('GM')
-            
-
-            '''if self.parent.sm.box.isChecked():
-                with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'a') as f:
-                            f.write(V_iSHE + '\n')'''
-
-
-    def sm_qt(self):
-        # Creating the QThread of the SourceMeter
-        self.sm_thread = QThread()
-        self.sm_qt = SM_QT(self.parent.sm.instr, float(self.parent.sm.meas_time.text()), self.nb_step, float(self.parent.vna.sw_time.text()))
-        self.sm_qt.moveToThread(self.sm_thread)
-
-        # When the measurent is done, read recorded data
-        if self.plot_gui:
-            self.sm_qt.meas_done.connect(self.sm_record)
-
-        if self.parent.ps.box.isChecked():
-            self.sm_qt.set_done.connect(self.meas_qt.ps_meas)
-
-        # Laucnh a measurement set
-        self.sm_qt.launch_meas.connect(self.sm_qt.meas)
-        
-        # End of measurements
-        self.sm_qt.finished.connect(self.sm_thread.quit)
-        self.sm_qt.finished.connect(self.sm_qt.deleteLater)
-        self.sm_thread.finished.connect(self.sm_thread.deleteLater)
-        
-        # Start sm measurement
-        self.sm_thread.start()
-
-
-    def vna_qt(self):
-        # Creating the QThread of the SourceMeter
-        self.vna_thread = QThread()
-        self.vna_qt = VNA_QT(self.parent.vna.instr)
-        self.vna_qt.moveToThread(self.vna_thread)
-
-        if self.plot_gui:
-            self.vna_qt.meas_done.connect(self.vna_record)
-
-        if self.parent.ps.box.isChecked():
-            self.vna_qt.meas_done.connect(self.meas_qt.ps_meas)
-
-        self.vna_qt.launch_meas.connect(self.vna_qt.meas)
-        
-        # End of measurements
-        self.vna_qt.finished.connect(self.vna_thread.quit)
-        self.vna_qt.finished.connect(self.vna_qt.deleteLater)
-        self.vna_thread.finished.connect(self.vna_thread.deleteLater)
-        
-        # Start sm measurement
-        self.vna_thread.start()
-
-
-    def sm_record(self, V, idx):
+    def sm_record(self, idx):
         with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'a') as f:
-                            f.write(V + '\n')
+                            f.write(self.parent.sm.instr.V + ', ')
 
         self.plot_gui.Vwatcher.read_data.emit(idx)
 
@@ -463,11 +344,11 @@ class Valid:
             path = os.path.join(self.s_path, s)
             with open(os.path.join(path, 'Magnitude.txt'), 'a') as f:
                 for val in getattr(self.parent.vna.instr, s)['mag']:
-                    f.write(f'{val} \n')
+                    f.write(f'{val[0]}, ')
                        
             with open(os.path.join(path, 'Phase.txt'), 'a') as f:
                 for val in getattr(self.parent.vna.instr, s)['phase']:
-                    f.write(f'{val} \n')
+                    f.write(f'{val[0]}, ')
 
         # Plot of S curve
         self.plot_gui.Swatcher.read_data.emit(idx)
@@ -533,67 +414,6 @@ class Valid:
 
 
 
-class PS_QT(QObject):
-    finished = pyqtSignal()
-    launch_meas = pyqtSignal(int)
-    def __init__(self, ps):
-        super().__init__()
-        self.ps = ps
-        self.bool = False
-        self.idx = 0
-
-    def meas(self):
-        if self.bool:
-            self.launch_meas(self.idx)
-
-            self.idx += 1
-            self.bool = False
-
-        else:
-            self.bool = True
-
-
-class SM_QT(QObject):
-    finished = pyqtSignal()
-    meas_done = pyqtSignal(str, int)
-    set_done = pyqtSignal(int)
-    launch_meas = pyqtSignal(int)
-    def __init__(self, sm, meas_time, nb_step, time_wait):
-        super().__init__()
-        self.sm = sm
-        self.meas_time = meas_time
-        self.nb_step = nb_step
-        self.time_wait = time_wait
-        self.idx = 0
-
-    
-    def meas(self, idx):
-        V = np.zeros(self.nb_step)
-        # Time waiting to be coordinate with the VNA
-        sleep(self.time_wait*(1 + 1/self.nb_step) + self.meas_time/2)
-        for i in range(self.nb_step):
-            V[i] = self.sm.read_val()
-            self.meas_done.emit(str(V[i]), idx)
-            sleep(self.meas_time - 0.1)
-
-        self.set_done.emit(idx)
-        self.idx += 1
-
-
-class VNA_QT(QObject):
-    finished = pyqtSignal()
-    launch_meas = pyqtSignal(int)
-    meas_done = pyqtSignal(int)
-    def __init__(self, vna):
-        super().__init__()
-        self.vna = vna
-
-    
-    def meas(self, idx):
-        self.vna.read_s_param()
-        self.meas_done.emit(idx)
-
-
 class Progressbar_QT(QObject):
     change_value = pyqtSignal(int)
     finished = pyqtSignal()
@@ -615,8 +435,9 @@ class Measure_QT(QObject):
     end_progressbar = pyqtSignal()
     off = pyqtSignal()
     msg_error = pyqtSignal(str)
-    meas_loop = pyqtSignal(tuple, int)
-    sm_qt_quit = pyqtSignal()
+    meas_sm = pyqtSignal()
+    meas_vna = pyqtSignal()
+    plots = pyqtSignal()
 
     def __init__(self, parent, path, s_path):
         super().__init__()
@@ -626,7 +447,48 @@ class Measure_QT(QObject):
         self.bool = True
 
 
-    def meas_record(self): # Starting measurement loop for each PS value
+
+    def meas_step(self, idx):
+        for freq in self.freq_list:
+            self.parent.vna.meas_settings(2, str(freq), str(freq + 1e-9))
+            self.parent.vna.read_s_param()
+            self.parent.sm.read_val()
+
+            self.meas_vna.emit(idx)
+            self.meas_sm.emit(idx)
+
+
+    def meas(self):
+        self.amp_list = np.linspace(float(self.parent.ps.I_start.text()), float(self.parent.ps.I_stop.text()), int(self.parent.ps.nb_step.text()))
+
+        self.freq_list = np.linspace(float(self.parent.vna.f_start.text()), float(self.parent.vna.f_stop.text()), int(self.parent.vna.nb_step.text()))
+
+        # Set of colors
+        normalize = mcolors.Normalize(vmin=0, vmax=len(self.amp_list))
+        colormap = cm.jet
+        self.colors = [colormap(normalize(n)) for n in range(len(self.amp_list))]
+
+        for i, amp in enumerate(self.amp_list):
+            self.plots.emit(self.colors[i])
+            self.parent.ps.set_current(amp)
+            with open(os.path.join(self.path, 'I_values.txt'), 'a') as f:
+                f.write(str(amp) + '\n')
+
+            self.meas_step(i)
+
+            if self.parent.gm.box.isChecked():
+                self.parent.gm.read_mag_field()
+
+                with open(os.path.join(self.path, 'H_values.txt'), 'a') as f:
+                    f.write(self.parent.gm.instr.mag_value + '\n')
+
+
+            
+
+                
+
+    def meas_record(self):
+        # Starting measurement loop for each PS value
         if self.parent.ps.box.isChecked():
             self.amps = np.linspace(float(self.parent.ps.I_start.text()), float(self.parent.ps.I_stop.text()), int(self.parent.ps.nb_step.text()))
             self.idx_max = len(self.amps)
