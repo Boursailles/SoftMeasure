@@ -301,6 +301,26 @@ class Valid:
 
 
     def meas_record(self):
+        # Creating measurement QThread
+        self.meas_thread = QThread()
+        self.meas_qt = Measure_QT(self.parent, self.path, self.s_path)
+
+        self.meas_qt.moveToThread(self.meas_thread)
+
+        self.meas_qt.end_progressbar.connect(self.end_progressbar)
+        self.meas_qt.off.connect(self.off)
+        self.meas_qt.msg_error.connect(self.msg_error)
+        self.meas_qt.meas_loop.connect(self.meas_loop)
+        '''if self.parent.sm.box.isChecked():
+            self.meas_qt.sm_qt_quit.connect(self.sm_thread.quit)'''
+
+        self.meas_thread.started.connect(self.meas_qt.meas_record)
+
+        self.meas_qt.finished.connect(self.meas_thread.quit)
+        self.meas_qt.finished.connect(self.meas_qt.deleteLater)
+        self.meas_thread.finished.connect(self.meas_qt.deleteLater)
+
+
         # Create Plotting window
         if self.parent.vna.box.isChecked() or self.parent.sm.box.isChecked():
             self.plot_gui = Plot_GUI(self.parent)
@@ -317,28 +337,8 @@ class Valid:
             self.plot_gui.V_QT(os.path.join(self.path, 'V-iSHE_values.txt'))
             self.sm_qt()
 
+
         self.launch_progressbar()
-
-
-        # Creating measurement QThread
-        self.meas_thread = QThread()
-        self.meas_qt = Measure_QT(self.parent, self.path, self.s_path)
-
-        self.meas_qt.moveToThread(self.meas_thread)
-
-        self.meas_qt.end_progressbar.connect(self.end_progressbar)
-        self.meas_qt.off.connect(self.off)
-        self.meas_qt.msg_error.connect(self.msg_error)
-        self.meas_qt.meas_loop.connect(self.meas_loop)
-        if self.parent.sm.box.isChecked():
-            self.meas_qt.sm_qt_quit.connect(self.sm_thread.quit)
-
-        self.meas_thread.started.connect(self.meas_qt.meas_record)
-
-        self.meas_qt.finished.connect(self.meas_thread.quit)
-        self.meas_qt.finished.connect(self.meas_qt.deleteLater)
-        self.meas_thread.finished.connect(self.meas_qt.deleteLater)
-
         self.meas_thread.start()
 
 
@@ -405,6 +405,9 @@ class Valid:
         if self.plot_gui:
             self.sm_qt.meas_done.connect(self.sm_record)
 
+        if self.parent.ps.box.isChecked():
+            self.sm_qt.set_done.connect(self.meas_qt.ps_meas)
+
         # Laucnh a measurement set
         self.sm_qt.launch_meas.connect(self.sm_qt.meas)
         
@@ -423,9 +426,13 @@ class Valid:
         self.vna_qt = VNA_QT(self.parent.vna.instr)
         self.vna_qt.moveToThread(self.vna_thread)
 
-        self.vna_qt.launch_meas.connect(self.vna_qt.meas)
         if self.plot_gui:
             self.vna_qt.meas_done.connect(self.vna_record)
+
+        if self.parent.ps.box.isChecked():
+            self.vna_qt.meas_done.connect(self.meas_qt.ps_meas)
+
+        self.vna_qt.launch_meas.connect(self.vna_qt.meas)
         
         # End of measurements
         self.vna_qt.finished.connect(self.vna_thread.quit)
@@ -528,14 +535,21 @@ class PS_QT(QObject):
         self.bool = False
         self.idx = 0
 
-    def meas(self, bool):
-        if bool:
-            pass
+    def meas(self):
+        if self.bool:
+            self.launch_meas(self.idx)
+
+            self.idx += 1
+            self.bool = False
+
+        else:
+            self.bool = True
 
 
 class SM_QT(QObject):
     finished = pyqtSignal()
     meas_done = pyqtSignal(str, int)
+    set_done = pyqtSignal(int)
     launch_meas = pyqtSignal(int)
     def __init__(self, sm, meas_time, nb_step, time_wait):
         super().__init__()
@@ -555,6 +569,7 @@ class SM_QT(QObject):
             self.meas_done.emit(str(V[i]), idx)
             sleep(self.meas_time - 0.1)
 
+        self.set_done.emit(idx)
         self.idx += 1
 
 
@@ -601,54 +616,61 @@ class Measure_QT(QObject):
         self.parent = parent
         self.path = path
         self.s_path = s_path
+        self.bool = True
 
 
     def meas_record(self): # Starting measurement loop for each PS value
         if self.parent.ps.box.isChecked():
-            amps_list = np.linspace(float(self.parent.ps.I_start.text()), float(self.parent.ps.I_stop.text()), int(self.parent.ps.nb_step.text()))
+            self.amps = np.linspace(float(self.parent.ps.I_start.text()), float(self.parent.ps.I_stop.text()), int(self.parent.ps.nb_step.text()))
+            self.idx_max = len(self.amps)
 
             # Set of colors
-            normalize = mcolors.Normalize(vmin=0, vmax=len(amps_list))
+            normalize = mcolors.Normalize(vmin=0, vmax=len(self.amps))
             colormap = cm.jet
-            self.colors = [colormap(normalize(n)) for n in range(len(amps_list))]
+            self.colors = [colormap(normalize(n)) for n in range(len(self.amps))]
+            print('chuilo')
+            self.ps_meas(-1)
 
-            for i, amps in enumerate(amps_list):
-                print(i, amps)
-                # Recording of I values
-                try:
-                    self.parent.ps.set_current(amps)
+        
+        # Starting other instruments measurements
+        else:
+            self.meas_loop.emit('b', 0)
+
+
+    def ps_meas(self, idx):
+        if self.bool:
+            idx += 1
+            if idx < self.idx_max:
+                self.bool = False
+                '''try:
+                    self.parent.ps.set_current(self.amps[idx])
                     with open(os.path.join(self.path, 'I_values.txt'), 'a') as f:
-                            f.write(str(amps) + '\n')
+                        f.write(str(self.amps[idx]) + '\n')
                 
-                # Issue with PS
                 except:
-                    if self.parent.sm.box.isChecked():
-                        self.sm_qt_quit.emit()
+                    """if self.parent.sm.box.isChecked():
+                        self.sm_qt_quit.emit()"""
                     self.end_progressbar.emit()
 
                     self.parent.ps.connection()
                     self.off.emit()
                     self.msg_error.emit('PS')
-                    return self.finished.emit()
+                    return'''
+                print(1)
+                print('AMPS', self.amps[idx])
+                print('IDX', idx)
+                self.parent.ps.set_current(self.amps[idx])
+                print(2)
+                with open(os.path.join(self.path, 'I_values.txt'), 'a') as f:
+                    f.write(str(self.amps[idx]) + '\n')
+                print(3)
 
-                self.meas_loop.emit(self.colors[i], i)
+                self.meas_loop.emit(self.colors[idx], idx)
+                print(4)
+            
+            else:
+                print(5)
+                self.finished.emit()
 
-                '''if self.parent.kill:
-                    if self.parent.sm.box.isChecked():
-                        self.sm_qt_quit.emit()
-                    self.end_progressbar.emit()
-                    return self.finished.emit()'''
-        
-        # Starting other instruments measurements
         else:
-            self.meas_loop.emit((1, 0, 0, 1), 0)
-        
-        '''self.off.emit()
-        self.finished.emit()'''
-
-        '''if self.parent.sm.box.isChecked():
-            self.sm_thread.quit()
-            self.plot_gui.Vthread.quit()
-
-        if self.parent.vna.box.isChecked():
-            self.plot_gui.Sthread.quit()'''
+            self.bool = True
