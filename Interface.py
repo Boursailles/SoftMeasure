@@ -6,7 +6,7 @@ from VNA_settings import *
 from PS_settings import *
 from GM_settings import *
 from SM_settings import *
-import Validate_3
+import Validate
 from Plot_GUI import *
 
 
