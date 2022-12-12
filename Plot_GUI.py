@@ -148,7 +148,7 @@ class Plot_GUI(QWidget):
         ---------
         Parameter:
         idx: int
-            idx of the last value in the last row in the Sfile
+            idx of the last index value in the last row in the Sfile
         """
 
         ydata = np.genfromtxt(self.watch_Sfile, skip_header=1)
@@ -167,7 +167,7 @@ class Plot_GUI(QWidget):
         ---------
         Parameter:
         idx: int
-            idx of the last value in the last row in the Vfile
+            idx of the last index value in the last row in the Vfile
         """
         
         ydata = np.genfromtxt(self.watch_Vfile, skip_header=1)

@@ -63,7 +63,7 @@ class SM(object):
         # Take index of last measurement
         idx = int(self.sm.query(':TRAC:ACT:END?'))
         V = self.sm.query(f'TRAC:DATA? {idx}, {idx}')
-        return float(V.replace('\n', ''))
+        self.V = float(V.replace('\n', ''))
 
     
     def off(self):
