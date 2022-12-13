@@ -87,13 +87,11 @@ class Plot_GUI(QWidget):
         self.Swatcher.moveToThread(self.Sthread)
         self.Swatcher.read_data.connect(self.read_Sdata)
         self.Swatcher.finished.connect(self.Sthread.quit)
-        self.Swatcher.finished.connect(self.Swatcher.deleteLater)
-        self.Swatcher.finished.connect(self.Sthread.deleteLater)
 
         self.Sthread.start()
 
 
-    def V_QT(self, watch_Vfile):
+    def V_QT(self, watch_Vfile, watch_DVfile):
         """
         Qthread bound to the reading of the V file.
 
@@ -103,14 +101,13 @@ class Plot_GUI(QWidget):
         """
 
         self.watch_Vfile = watch_Vfile
+        self.watch_DVfile = watch_DVfile
         self.Vwatcher = Watcher(watch_Vfile)
         self.Vthread = QThread()
 
         self.Vwatcher.moveToThread(self.Vthread)
         self.Vwatcher.read_data.connect(self.read_Vdata)
         self.Vwatcher.finished.connect(self.Vthread.quit)
-        self.Vwatcher.finished.connect(self.Vwatcher.deleteLater)
-        self.Vwatcher.finished.connect(self.Vthread.deleteLater)
 
         self.Vthread.start()
 
@@ -137,7 +134,7 @@ class Plot_GUI(QWidget):
         color: tuple
         """
 
-        self.V_trace, = self.V_plot.graph.axes.plot([], [], c=color, marker='o')
+        self.V_trace = self.V_plot.graph.axes.errorbar([], [], [], c=color, marker='o')
         self.V_plot.graph.draw()
 
 
@@ -150,9 +147,8 @@ class Plot_GUI(QWidget):
         idx: int
             idx of the last index value in the last row in the Sfile
         """
-
-        ydata = np.genfromtxt(self.watch_Sfile, skip_header=1)
-        ydata = ydata[-1]
+        
+        ydata = np.genfromtxt(self.watch_Sfile, skip_header=1+idx, delimiter=', ')
 
         try:
             self.S_trace.set_data(self.xdata[:len(ydata)], ydata)
@@ -162,7 +158,7 @@ class Plot_GUI(QWidget):
 
         except IndexError:
             self.S_trace.set_data(self.xdata[0], ydata)
-
+        
         self.S_plot.graph.axes.relim()
         self.S_plot.graph.axes.autoscale_view()
         self.S_plot.graph.draw()
@@ -178,21 +174,106 @@ class Plot_GUI(QWidget):
             idx of the last index value in the last row in the Vfile
         """
         
-        ydata = np.genfromtxt(self.watch_Vfile, skip_header=1)
-        ydata = ydata[-1]
-        
+        ydata = np.genfromtxt(self.watch_Vfile, skip_header=1+idx, delimiter=', ')
+        Dydata = np.genfromtxt(self.watch_DVfile, skip_header=1+idx, delimiter=', ')
+
         try:
-            self.V_trace.set_data(self.xdata[:len(ydata)], ydata)
-        
+            self.update_errorbar(self.V_trace, self.xdata[:len(ydata)], ydata, None, Dydata)
+
         except TypeError:
-            self.V_trace.set_data(self.xdata[0], ydata)
+            self.update_errorbar(self.V_trace, np.array([self.xdata[0]]), np.array([ydata]), None, np.array([Dydata]))
 
         except IndexError:
-            self.V_trace.set_data(self.xdata[0], ydata)
-
+            self.update_errorbar(self.V_trace, np.array([self.xdata[0]]), np.array([ydata]), None, np.array([Dydata]))
+        
         self.V_plot.graph.axes.relim()
         self.V_plot.graph.axes.autoscale_view()
         self.V_plot.graph.draw()
+
+
+    def update_errorbar(self, errobj, x, y, xerr=None, yerr=None):
+        """
+        Method allowing to update errorbar
+
+        ---------
+        Parameter:
+        errobj: class
+            Errorbar from matplotlib
+
+        x: np.ndarray
+
+        y: np.ndarray
+
+        xerr: any
+
+        yerr: any
+        """
+
+        ln, caps, bars = errobj
+
+        if len(bars) == 2:
+            assert xerr is not None and yerr is not None, "Your errorbar object has 2 dimension of error bars defined. You must provide xerr and yerr."
+            barsx, barsy = bars  # bars always exist (?)
+            try:  # caps are optional
+                errx_top, errx_bot, erry_top, erry_bot = caps
+
+            except ValueError:  # in case there is no caps
+                pass
+
+
+        elif len(bars) == 1:
+            assert (xerr is     None and yerr is not None) or (xerr is not None and yerr is     None), "Your errorbar object has 1 dimension of error bars defined. You must provide xerr or yerr."
+            if xerr is not None:
+                barsx, = bars  # bars always exist (?)
+                try:
+                    errx_top, errx_bot = caps
+
+                except ValueError:  # in case there is no caps
+                    pass
+
+            
+            else:
+                barsy, = bars  # bars always exist (?)
+                try:
+                    erry_top, erry_bot = caps
+
+                except ValueError:  # in case there is no caps
+                    pass
+
+        ln.set_data(x,y)
+
+        try:
+            errx_top.set_xdata(x + xerr)
+            errx_bot.set_xdata(x - xerr)
+            errx_top.set_ydata(y)
+            errx_bot.set_ydata(y)
+
+        except NameError:
+            pass
+
+
+        try:
+            barsx.set_segments([np.array([[xt, y], [xb, y]]) for xt, xb, y in zip(x + xerr, x - xerr, y)])
+
+        except NameError:
+            pass
+
+
+        try:
+            erry_top.set_xdata(x)
+            erry_bot.set_xdata(x)
+            erry_top.set_ydata(y + yerr)
+            erry_bot.set_ydata(y - yerr)
+
+        except NameError:
+            pass
+
+
+        try:
+            barsy.set_segments([np.array([[x, yt], [x, yb]]) for x, yt, yb in zip(x, y + yerr, y - yerr)])
+
+        except NameError:
+            pass
 
 
 
@@ -229,7 +310,7 @@ class Canva_2D(FigureCanvasQTAgg):
         dpi: int
         """
 
-        fig = Figure(figsize=(width, height), dpi=dpi)
+        fig = Figure(figsize=(width, height), dpi=dpi, constrained_layout=True)
         self.axes = fig.add_subplot(111)
         super(Canva_2D, self).__init__(fig)
 

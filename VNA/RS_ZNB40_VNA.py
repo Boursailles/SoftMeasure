@@ -44,7 +44,7 @@ class VNA:
         print('Connected to ' + self.vna.query("*IDN?"))
 
 
-    def initialization(self, f_start, f_stop, nb_point, IFBW, power, sw_time):
+    def initialization(self, IFBW, power):
         """
         VNA initialization
         
@@ -61,26 +61,22 @@ class VNA:
         power: int
             Signal power
         """
-
-        self.nb_point = nb_point
-        self.f_start = f_start
-        self.f_stop = f_stop
+        
         self.IFBW = IFBW
         self.power = power
-        self.sw_time = str(2*float(sw_time))
 
         
         self.vna.write("*RST")
-
+        
         # If VNA takes more than 2 min to answer, something's wrong
         self.vna.timeout = 2 * 60 * 1e3
-
+        
         # Define name trace with S parameter
         self.vna.write("CALC:PAR:SDEF 'Trc1', 'S11'")
         self.vna.write("CALC:PAR:SDEF 'Trc2', 'S12'")
         self.vna.write("CALC:PAR:SDEF 'Trc3', 'S21'")
         self.vna.write("CALC:PAR:SDEF 'Trc4', 'S22'")
-            
+        
         self.vna.write("CALC:PAR:SDEF 'Trc5', 'S11'")
         self.vna.write("CALC:FORM PHAS")
         self.vna.write("CALC:PAR:SDEF 'Trc6', 'S12'")
@@ -90,19 +86,19 @@ class VNA:
         self.vna.write("CALC:PAR:SDEF 'Trc8', 'S22'")
         self.vna.write("CALC:FORM PHAS")
             
-            
+        
         # Display 4 windows
         self.vna.write("DISP:WIND1:STAT ON")
         self.vna.write("DISP:WIND2:STAT ON")
         self.vna.write("DISP:WIND3:STAT ON")
         self.vna.write("DISP:WIND4:STAT ON")
-            
+        
         self.vna.write("DISP:WIND5:STAT ON")
         self.vna.write("DISP:WIND6:STAT ON")
         self.vna.write("DISP:WIND7:STAT ON")
         self.vna.write("DISP:WIND8:STAT ON")
             
-            
+        
         # Display each trace to each window
         self.vna.write("DISP:WIND1:TRAC:FEED 'Trc1'")
         self.vna.write("DISP:WIND2:TRAC:FEED 'Trc2'")
@@ -113,7 +109,7 @@ class VNA:
         self.vna.write("DISP:WIND6:TRAC:FEED 'Trc6'")
         self.vna.write("DISP:WIND7:TRAC:FEED 'Trc7'")
         self.vna.write("DISP:WIND8:TRAC:FEED 'Trc8'")
-            
+        
             
         # Auto-scale Y-axis
         self.vna.write("DISP:TRAC:Y:AUTO ONCE, 'Trc1'")
@@ -125,32 +121,28 @@ class VNA:
         self.vna.write("DISP:TRAC:Y:AUTO ONCE, 'Trc6'")
         self.vna.write("DISP:TRAC:Y:AUTO ONCE, 'Trc7'")
         self.vna.write("DISP:TRAC:Y:AUTO ONCE, 'Trc8'")
-
+        
         self.vna.write("BWID " + IFBW + "kHz")
         self.vna.write("SOUR:POW " + str(power))
-
-        self.meas_settings(self.nb_point, self.f_start, self.f_stop)
-            
         
+    
     def meas_settings(self, nb_point, f_start, f_stop):
+        
+        self.nb_point = nb_point
+        self.f_start = f_start
+        self.f_stop = f_stop
+
         # Measure settings
         self.vna.write("SWE:POIN " + nb_point)
-        '''self.vna.write("SWE:TIME " + sw_time)'''
         self.vna.write("FREQ:STAR " + f_start + "GHz")
         self.vna.write("FREQ:STOP " + f_stop + "GHz")
-
-        '''
-        self.vna.write("INIT:CONT:ALL ON; *WAI")
-        self.vna.write("INIT:CONT:ALL ON; *WAI")
-        self.vna.write("SOUR:POW " + str(self.power))'''
-
+        
         self.vna.write("DISP:TRAC1:Y:AUTO ONCE, 'Trc1'")
         self.vna.write("DISP:TRAC2:Y:AUTO ONCE, 'Trc2'")
         self.vna.write("DISP:TRAC3:Y:AUTO ONCE, 'Trc3'")
         self.vna.write("DISP:TRAC4:Y:AUTO ONCE, 'Trc4'")
-
+        
         self.vna.write("FORM:DATA ASCii")
-        self.vna.write("INIT:CONT:ALL ON")
         
 
     def read_s_param(self):
@@ -165,9 +157,9 @@ class VNA:
         self.instr.Sij = {'dB': array, 'phase': array}
         """
 
-        '''self.vna.write("INIT:CONT OFF; :INIT; *WAI")
+        self.vna.write("INIT:CONT OFF; :INIT; *WAI")
 
-        self.vna.write("INIT:CONT:ALL ON")'''
+        self.vna.write("INIT:CONT:ALL ON")
             
         '''self.vna.write("DISP:TRAC1:Y:AUTO ONCE, 'Trc1'")
         self.vna.write("DISP:TRAC2:Y:AUTO ONCE, 'Trc2'")

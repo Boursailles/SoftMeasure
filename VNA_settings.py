@@ -156,10 +156,10 @@ class VNA_settings():
         self.sw_time: Time sweep
         """
 
-        self.instr.initialization(self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.IFBW.text(), self.power.currentText())
+        self.instr.initialization(self.IFBW.text(), self.power.currentText())
 
 
-    def meas_settings(self, nb_point,f_start, f_stop):
+    def meas_settings(self, nb_point, f_start, f_stop):
         """
         Change VNA settings.
 

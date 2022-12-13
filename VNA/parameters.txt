@@ -1,2 +1,2 @@
 device	starting_frequency	ending_frequency	step_number	time_sweep	IFBW	power
-1	0.01	10.0	5	5.0	1.0	0
+1	0.01	10.0	6	0.0	1.0	0

@@ -86,20 +86,20 @@ class Valid:
         Event method when the "okay" button is clicked.
         """
 
-        self.path = self.save.pathEdit.text()            
-
+        self.path = self.save.pathEdit.text()
+        
         self.save_params()
         if self.check_kill():
             return
-
+            
         self.folder()
         if self.check_kill():
             return
-
+        
         self.connection()
         if self.check_kill():
             return
-        
+            
         self.initialization()
         if self.check_kill():
             return
@@ -254,7 +254,6 @@ class Valid:
                 self.off()
                 return self.msg_error('VNA')
 
-
         if self.parent.ps.box.isChecked():
             try:
                 self.parent.ps.initialization()
@@ -263,7 +262,6 @@ class Valid:
                 self.off()
                 return self.msg_error('PS')
 
-
         if self.parent.gm.box.isChecked():
             try:
                 self.parent.gm.initialization()
@@ -271,7 +269,6 @@ class Valid:
             except:
                 self.off()
                 return self.msg_error('GM')
-
 
         if self.parent.sm.box.isChecked():
             try:
@@ -294,104 +291,40 @@ class Valid:
         self.meas.end_progressbar.connect(self.end_progressbar)
         self.meas.off.connect(self.off)
         self.meas.msg_error.connect(self.msg_error)
-        self.meas.meas_vna.connect(self.vna_record)
-        self.meas.meas_sm.connect(self.sm_record)
-
+        self.meas.finished.connect(self.off)
 
         # Measurement in parralel (creation of a measurement Qhread).
-        if self.vna.box.isChecked() and self.sm.box.isChecked():
+        if self.parent.vna.box.isChecked() and self.parent.sm.box.isChecked():
             # Creating measurement QThread
             self.meas_thread = QThread()
+            self.meas.moveToThread(self.meas_thread)
 
-            self.meas_thread.started.connect(self.meas.meas_record)
+            self.meas_thread.started.connect(self.meas.meas)
 
             self.meas.finished.connect(self.meas_thread.quit)
-            self.meas.finished.connect(self.meas.deleteLater)
-            self.meas_thread.finished.connect(self.meas.deleteLater)
 
             # Creating plot window
             self.plot_gui = Plot_GUI(self.parent)
 
             self.nb_step = int(float(self.parent.vna.nb_step.text()))
             self.plot_gui.S_QT(os.path.join(self.s_path, 'S21/Magnitude.txt'))
-            self.plot_gui.V_QT(os.path.join(self.path, 'V-iSHE_values.txt'))
+            self.plot_gui.V_QT(os.path.join(self.path, 'V-iSHE_values.txt'), os.path.join(self.path, 'Delta_V-iSHE_values.txt'))
 
             self.meas.plots.connect(self.plot_gui.S_curve)
             self.meas.plots.connect(self.plot_gui.V_curve)
+            self.meas.Vwatcher.connect(self.plot_gui.Vwatcher.read_data.emit)
+            self.meas.Swatcher.connect(self.plot_gui.Swatcher.read_data.emit)
+            self.meas.finished.connect(self.plot_gui.Vwatcher.finished.emit)
+            self.meas.finished.connect(self.plot_gui.Swatcher.finished.emit)
 
             self.meas_thread.start()
         
         #Measurement in serie.
         else:
+            self.parent.vna.meas_settings(self.parent.vna.nb_step.text(), self.parent.f_start.text(), self.parent.vna.f_stop.text())
             self.meas.meas_record()
 
-
         self.launch_progressbar()
-
-
-    def sm_record(self, idx, meas):
-        """
-        Recording SM measurement if a thread measurement is used.
-
-        ---------
-        Parameters:
-        idx: int
-            Index bound to the PS iteration, otherwise equal to 0.
-
-        meas: array
-            Set of measurement to making an average.
-        """
-
-        # Averaging.
-        mean_meas = mean(meas)
-
-        # Delta (error).
-        sigma = max(abs(meas - mean_meas))
-
-        # Recording of the averaging value.
-        with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'a') as f:
-                            f.write(mean_meas + ', ')
-
-        # Recording of the delta value.
-        with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'a') as f:
-                f.write(sigma + ', ')
-
-        # Reading of the file for the plotting.
-        try:
-            self.plot_gui.Vwatcher.read_data.emit(idx)
-        
-        except:
-            pass
-
-
-    def vna_record(self, idx):
-        """
-        Recording S-parameters of the VNA measurement if a thread measurement is used.
-
-        ---------
-        Parameter:
-        idx: int
-            Index bound to the PS iteration, otherwise equal to 0.
-        """
-        
-        for s in self.sij:
-            path = os.path.join(self.s_path, s)
-            # Recording of the magnitude value.
-            with open(os.path.join(path, 'Magnitude.txt'), 'a') as f:
-                for val in getattr(self.parent.vna.instr, s)['mag']:
-                    f.write(f'{val[0]}, ')
-            
-            # Recording of the phase value.
-            with open(os.path.join(path, 'Phase.txt'), 'a') as f:
-                for val in getattr(self.parent.vna.instr, s)['phase']:
-                    f.write(f'{val[0]}, ')
-
-        # Reading of the file for the plotting.
-        try:
-            self.plot_gui.Swatcher.read_data.emit(idx)
-
-        except:
-            pass
 
 
     def msg_error(self, device):
@@ -426,23 +359,15 @@ class Valid:
         """
 
         self.okay.setDisabled(True)
-        self.time = None
-        time_vna = 0
-        time_sm = 0
-
-        # Adding the time delay due to the VNA sweep.
-        if self.parent.vna.box.isChecked():
-            time_vna = int(float(self.parent.vna.sw_time.text()))
+        self.time = 0
 
         # Adding of the time delay due to the SM measurement.
         if self.parent.sm.box.isChecked():
-            time_sm = int(float(self.parent.sm.meas_time.text()))
+            self.time = int(float(self.parent.sm.meas_time.text()))
 
             if self.parent.vna.box.isChecked():
-                time_sm *= int(self.parent.vna.nb_step.text())
-
-
-        self.time = max(time_vna, time_sm)
+                self.time *= int(self.parent.vna.nb_step.text())
+                self.time += 2
 
         # Total time delay of iterated measurement due to the PS sweep.
         if self.parent.ps.box.isChecked():
@@ -468,9 +393,7 @@ class Valid:
             self.pb_qt.change_value.connect(self.set_progressbar_val)
 
             self.pb_qt.finished.connect(self.pb_thread.quit)
-            self.pb_qt.finished.connect(self.pb_qt.deleteLater)
             self.pb_qt.finished.connect(self.end_progressbar)
-            self.pb_thread.finished.connect(self.pb_thread.deleteLater)
 
             self.pb_thread.start()
 
@@ -608,9 +531,9 @@ class Measure_QT(QObject):
     end_progressbar = pyqtSignal()
     off = pyqtSignal()
     msg_error = pyqtSignal(str)
-    meas_sm = pyqtSignal(int, list)
-    meas_vna = pyqtSignal(int)
-    plots = pyqtSignal()
+    plots = pyqtSignal(tuple)
+    Vwatcher = pyqtSignal(int)
+    Swatcher = pyqtSignal(int)
 
     def __init__(self, parent, path, s_path):
         """
@@ -630,6 +553,7 @@ class Measure_QT(QObject):
         self.path = path
         self.s_path = s_path
         self.bool = True
+        self.sij = ('S11', 'S12', 'S21', 'S22')
 
 
     def meas_step(self, idx):
@@ -643,36 +567,44 @@ class Measure_QT(QObject):
         """
 
         # VNA Sweep of one frequency and the same + 1 Hz.
-        if self.parent.vna.box.isChecked():
-            for freq in self.freq_list:
-                self.parent.vna.meas_settings(2, str(freq), str(freq + 1e-9))
+        if self.parent.vna.box.isChecked() and self.parent.sm.box.isChecked():
+            for i, freq in enumerate(self.freq_list):
+                self.parent.vna.meas_settings('2', str(freq), str(freq + 1e-9))
                 self.parent.vna.read_s_param()
 
                 sm_list = []
                 start = now = time()
 
                 # Set of SM measurement while a given time.
-                if self.parent.sm.box.isChecked():
-                    while now - start < self.parent.sm.meas_time.text():
-                        self.parent.sm.read_val()
-                        sm_list.append(self.parent.sm.instr.V)
-                        now = time()
+                while now - start < self.sm_time:
+                    self.parent.sm.read_val()
+                    sm_list.append(self.parent.sm.instr.V)
+                    now = time()
                     
-                    # Recording in files SM measurements.
-                    self.meas_sm.emit(idx, np.array(sm_list))
+                # Recording in files SM measurements.
+                self.sm_record(i, self.len_freq_list, idx, np.array(sm_list))
                 
                 # Recording in files VNA measurements.
-                self.meas_vna.emit(idx)
+                self.vna_record(i, self.len_freq_list, idx)
 
         # Set of SM measurement while a given time.
         elif self.parent.sm.box.isChecked():
-            while now - start < self.parent.sm.meas_time.text():
+            
+            while now - start < self.sm_time:
                 self.parent.sm.read_val()
                 sm_list.append(self.parent.sm.instr.V)
                 now = time()
                     
             # Recording in files SM measurements.
-            self.meas_sm.emit(idx, np.array(sm_list))
+            self.sm_record(idx, 0, idx, np.array(sm_list))
+
+        # VNA Sweep.
+        elif self.parent.vna.box.isChecked():
+            self.parent.vna.meas_settings(self.parent.vna.nb_step.text(), self.parent.vna.f_start.text(), self.parent.vna.f_stop.text())
+            self.parent.vna.read_s_param()
+
+            # Recording in files VNA measurements.
+            self.vna_record(idx, 0, idx)
 
                 
     def meas(self):
@@ -683,10 +615,15 @@ class Measure_QT(QObject):
         # Creation of the VNA frequency sweep list.
         if self.parent.vna.box.isChecked():
             self.freq_list = np.linspace(float(self.parent.vna.f_start.text()), float(self.parent.vna.f_stop.text()), int(self.parent.vna.nb_step.text()))
+            self.len_freq_list = len(self.freq_list)
+
+        if self.parent.sm.box.isChecked():
+            self.sm_time = float(self.parent.sm.meas_time.text())
 
         if self.parent.ps.box.isChecked():
             # Creation of the PS current sweep list.
             self.amp_list = np.linspace(float(self.parent.ps.I_start.text()), float(self.parent.ps.I_stop.text()), int(self.parent.ps.nb_step.text()))
+            self.len_amp_list = len(self.amp_list)
 
             # Set of colors
             normalize = mcolors.Normalize(vmin=0, vmax=len(self.amp_list))
@@ -712,7 +649,6 @@ class Measure_QT(QObject):
                     # Recording of the static magnetic field value.
                     with open(os.path.join(self.path, 'H_values.txt'), 'a') as f:
                         f.write(self.parent.gm.instr.mag_value + '\n')
-
                 # New row for the next measurement step for the VNA and SM files.
                 sij = ['S11', 'S12', 'S21', 'S22']
                 for s in sij:
@@ -731,5 +667,97 @@ class Measure_QT(QObject):
 
 
         else:
-            self.plots.emit((1, 0, 0, 1))
+            self.len_amp_list = 0
+            self.plots.emit((0, 0, 1, 1))
             self.meas_step(0)
+
+        self.finished.emit()
+
+    
+    def sm_record(self, idx, len, idx_amp, meas):
+        """
+        Recording SM measurement if a thread measurement is used.
+
+        ---------
+        Parameters:
+        idx: int
+            Index bound to the PS iteration, otherwise equal to 0.
+
+        meas: array
+            Set of measurement to making an average.
+        """
+
+        # Averaging.
+        mean_meas = mean(meas)
+
+        # Delta (error).
+        sigma = max(abs(meas - mean_meas))
+
+        # Recording of the averaging value.
+        with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'a') as f:
+            f.write(str(mean_meas))
+            if self.parent.vna.box.isChecked() and idx < len-1:
+                f.write(', ')
+                    
+
+        # Recording of the delta value.
+        with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'a') as f:
+            f.write(str(sigma))
+            if self.parent.vna.box.isChecked() and idx < len-1:
+                f.write(', ')
+
+        self.Vwatcher.emit(idx_amp)
+        # Reading of the file for the plotting.
+        '''try:
+            self.Vwatcher.emit(idx_amp)
+        
+        except:
+            pass'''
+
+
+    def vna_record(self, idx, len, idx_amp):
+        """
+        Recording S-parameters of the VNA measurement if a thread measurement is used.
+
+        ---------
+        Parameter:
+        idx: int
+            Index bound to the PS iteration, otherwise equal to 0.
+        """
+        
+        for s in self.sij:
+            path = os.path.join(self.s_path, s)
+            # Recording of the magnitude value.
+            with open(os.path.join(path, 'Magnitude.txt'), 'a') as f:
+                if self.parent.sm.box.isChecked():
+                    f.write(str(getattr(self.parent.vna.instr, s)['mag'][0]))
+                    if idx < len-1:
+                        f.write(', ')
+                
+                else:
+                    for val in getattr(self.parent.vna.instr, s)['mag']:
+                        f.write(str(val))
+                        if idx < len-1:
+                            f.write(', ')
+            
+            # Recording of the phase value.
+            with open(os.path.join(path, 'Phase.txt'), 'a') as f:
+                if self.parent.sm.box.isChecked():
+                    f.write(str(getattr(self.parent.vna.instr, s)['mag'][0]))
+                    if idx < len-1:
+                        f.write(', ')
+                
+                else:
+                    for val in getattr(self.parent.vna.instr, s)['mag']:
+                        f.write(str(val))
+                        if idx < len-1:
+                            f.write(', ')
+
+        self.Swatcher.emit(idx_amp)
+        # Reading of the file for the plotting.
+        '''try:
+            self.Swatcher.emit(idx_amp)
+
+        except:
+            pass'''
+

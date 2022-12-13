@@ -6,7 +6,7 @@ from VNA_settings import *
 from PS_settings import *
 from GM_settings import *
 from SM_settings import *
-import Validate
+from Validate import *
 from Plot_GUI import *
 
 
@@ -45,7 +45,7 @@ class Interface(QWidget):
 
 
     def widget_valid(self):
-        self.valid = Validate_3.Valid(self)
+        self.valid = Valid(self)
         self.valid.widget()
 
         self.layout.addWidget(self.valid.box, 1, 0)
