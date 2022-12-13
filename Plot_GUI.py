@@ -45,7 +45,7 @@ class Plot_GUI(QWidget):
 
     def widget(self):
         """
-        Display of plot frame windgets.
+        Display of plot frame widgets.
         """
 
         self.box = QGroupBox('Plots')
@@ -152,9 +152,17 @@ class Plot_GUI(QWidget):
         """
 
         ydata = np.genfromtxt(self.watch_Sfile, skip_header=1)
-        ydata = ydata[idx*len(self.xdata):]
+        ydata = ydata[-1]
 
-        self.S_trace.set_data(self.xdata[:len(ydata)], ydata)
+        try:
+            self.S_trace.set_data(self.xdata[:len(ydata)], ydata)
+
+        except TypeError:
+            self.S_trace.set_data(self.xdata[0], ydata)
+
+        except IndexError:
+            self.S_trace.set_data(self.xdata[0], ydata)
+
         self.S_plot.graph.axes.relim()
         self.S_plot.graph.axes.autoscale_view()
         self.S_plot.graph.draw()
@@ -171,19 +179,20 @@ class Plot_GUI(QWidget):
         """
         
         ydata = np.genfromtxt(self.watch_Vfile, skip_header=1)
+        ydata = ydata[-1]
         
         try:
-            ydata = ydata[idx*len(self.xdata):]
             self.V_trace.set_data(self.xdata[:len(ydata)], ydata)
-            self.V_plot.graph.axes.relim()
-            self.V_plot.graph.axes.autoscale_view()
-            self.V_plot.graph.draw()
         
         except TypeError:
             self.V_trace.set_data(self.xdata[0], ydata)
 
         except IndexError:
             self.V_trace.set_data(self.xdata[0], ydata)
+
+        self.V_plot.graph.axes.relim()
+        self.V_plot.graph.axes.autoscale_view()
+        self.V_plot.graph.draw()
 
 
 
