@@ -6,6 +6,7 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from time import sleep, time
 from statistics import mean 
 import numpy as np
+import math
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
 from Save import *
@@ -363,15 +364,17 @@ class Valid:
 
         # Adding of the time delay due to the SM measurement.
         if self.parent.sm.box.isChecked():
-            self.time = int(float(self.parent.sm.meas_time.text()))
+            self.time = float(self.parent.sm.meas_time.text()) + 0.1
 
             if self.parent.vna.box.isChecked():
-                self.time *= int(self.parent.vna.nb_step.text())
-                self.time += 2
+                self.time *= float(self.parent.vna.nb_step.text())
 
         # Total time delay of iterated measurement due to the PS sweep.
         if self.parent.ps.box.isChecked():
-            self.time *= int(self.parent.ps.nb_step.text())
+            ps_sleep = 0.5
+            ps_epsilon = 4e-4
+            current_step = abs(float(self.parent.ps.I_start.text()) - float(self.parent.ps.I_stop.text()))/float(self.parent.ps.nb_step.text())
+            self.time = int((self.time + (int(math.log2(current_step/ps_epsilon)) + 1)*ps_sleep)*int(self.parent.ps.nb_step.text())) + 1
 
 
         if self.time != None:
@@ -404,7 +407,7 @@ class Valid:
 
         ---------
         Parameter:
-        val: float
+        val: int
             Measurement time in sec.
         """
 
