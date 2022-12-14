@@ -69,15 +69,24 @@ class Valid:
         retainsize.setRetainSizeWhenHidden(True)
         self.display_time.setSizePolicy(retainsize)
 
+        self.emergency = QPushButton()
+        self.emergency.setIcon(QIcon('Emergency_button.jpg'))
+        self.emergency.clicked.connect(self.off)
+        self.emergency.setVisible(False)
+        retainsize = self.emergency.sizePolicy()
+        retainsize.setRetainSizeWhenHidden(True)
+        self.emergency.setSizePolicy(retainsize)
+
 
         layout = QGridLayout()
 
-        layout.addWidget(self.save.box, 0, 0)
-        layout.addWidget(self.okay, 0, 1)
-        layout.addWidget(self.cancel, 0, 2)
+        layout.addWidget(self.save.box, 0, 0, 1, 2)
+        layout.addWidget(self.okay, 0, 2)
+        layout.addWidget(self.cancel, 0, 3)
         layout.addWidget(self.progressbar, 1, 0)
         layout.addWidget(self.estimated_time, 1, 1)
         layout.addWidget(self.display_time, 1, 2)
+        layout.addWidget(self.display_time, 1, 3)
 
         self.box.setLayout(layout)
 
@@ -289,10 +298,8 @@ class Valid:
         self.meas = Measure_QT(self.parent, self.path, self.s_path)
 
         # Connecting signals of the measurement class.
-        self.meas.end_progressbar.connect(self.end_progressbar)
-        self.meas.off.connect(self.off)
         self.meas.msg_error.connect(self.msg_error)
-        self.meas.finished.connect(self.off)
+        self.meas.off.connect(self.off)
 
         # Measurement in parralel (creation of a measurement Qhread).
         if self.parent.vna.box.isChecked() and self.parent.sm.box.isChecked():
@@ -301,7 +308,6 @@ class Valid:
             self.meas.moveToThread(self.meas_thread)
 
             self.meas_thread.started.connect(self.meas.meas)
-
             self.meas.finished.connect(self.meas_thread.quit)
 
             # Creating plot window
@@ -315,8 +321,6 @@ class Valid:
             self.meas.plots.connect(self.plot_gui.V_curve)
             self.meas.Vwatcher.connect(self.plot_gui.Vwatcher.read_data.emit)
             self.meas.Swatcher.connect(self.plot_gui.Swatcher.read_data.emit)
-            self.meas.finished.connect(self.plot_gui.Vwatcher.finished.emit)
-            self.meas.finished.connect(self.plot_gui.Swatcher.finished.emit)
 
             self.meas_thread.start()
         
@@ -373,8 +377,11 @@ class Valid:
         if self.parent.ps.box.isChecked():
             ps_sleep = 0.5
             ps_epsilon = 4e-4
-            current_step = abs(float(self.parent.ps.I_start.text()) - float(self.parent.ps.I_stop.text()))/float(self.parent.ps.nb_step.text())
-            self.time = int((self.time + (int(math.log2(current_step/ps_epsilon)) + 1)*ps_sleep)*int(self.parent.ps.nb_step.text())) + 1
+            I_start = float(self.parent.ps.i_start.text())
+            I_stop = float(self.parent.ps.I_stop.text())
+            I_nb_step = float(self.parent.ps.nb_step.text())
+            current_step = abs(I_start - I_stop)/I_nb_step
+            self.time = int((self.time + (math.log2(current_step/ps_epsilon) + 1)*ps_sleep)*I_nb_step + math.log2((I_start - I_stop)/ps_epsilon)*ps_sleep) + 1
 
 
         if self.time != None:
@@ -385,6 +392,7 @@ class Valid:
             self.progressbar.setVisible(True)
             self.estimated_time.setVisible(True)
             self.display_time.setVisible(True)
+            self.emergency.setVisible(True)
 
             # Creating a QThread for the progressbar
             self.pb_thread = QThread()
@@ -442,6 +450,7 @@ class Valid:
         self.progressbar.setVisible(False)
         self.estimated_time.setVisible(False)
         self.display_time.setVisible(False)
+        self.emergency.setVisible(False)
 
 
     def check_current_supplied(self):
@@ -486,7 +495,24 @@ class Valid:
         """
         Turn off instrument(s).
         """
+
+        try:
+            self.meas.finished.emit()
+        except:
+            pass
+
+        try:
+            self.pb_qt.finished.emit()
+        except:
+            pass
+
+        try:
+            self.plot_gui.Vwatcher.finished.emit()
+            self.plot_gui.Swatcher.finished.emit()
+        except:
+            pass
         
+
         if self.parent.vna.box.isChecked():
             self.parent.vna.off()
 
@@ -531,7 +557,6 @@ class Progressbar_QT(QObject):
 
 class Measure_QT(QObject):
     finished = pyqtSignal()
-    end_progressbar = pyqtSignal()
     off = pyqtSignal()
     msg_error = pyqtSignal(str)
     plots = pyqtSignal(tuple)
@@ -674,7 +699,7 @@ class Measure_QT(QObject):
             self.plots.emit((0, 0, 1, 1))
             self.meas_step(0)
 
-        self.finished.emit()
+        self.off.emit()
 
     
     def sm_record(self, idx, len, idx_amp, meas):
@@ -763,4 +788,3 @@ class Measure_QT(QObject):
 
         except:
             pass'''
-
