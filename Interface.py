@@ -34,9 +34,6 @@ class Interface(QWidget):
         
         self.layout = QGridLayout()
 
-        self.widget_settings()
-        self.widget_valid()
-
 
     def widget_settings(self):
         """
@@ -80,8 +77,8 @@ if __name__ == '__main__':
         app = QApplication(sys.argv)
     
     soft = Interface()
-    '''soft.widget_valid()
-    soft.widget_settings()'''
+    soft.widget_valid()
+    soft.widget_settings()
     soft.show()
 
     sys.exit(app.exec_())

@@ -97,13 +97,13 @@ class Valid:
         """
         Event method when the "okay" button is clicked.
         """
-
+        
         self.path = self.save.pathEdit.text()
         
         self.save_params()
         if self.check_kill():
             return
-            
+        
         self.folder()
         if self.check_kill():
             return
@@ -111,7 +111,7 @@ class Valid:
         self.connection()
         if self.check_kill():
             return
-            
+        
         self.initialization()
         if self.check_kill():
             return
@@ -396,7 +396,6 @@ class Valid:
             # Setting of the progressbar parameters.
             self.progressbar.setMinimum(0)
             self.progressbar.setMaximum(self.time)
-            print('TIME: ', self.time)
 
             self.progressbar.setValue(0)
             self.display_time.setText('')
@@ -615,7 +614,6 @@ class Measure_QT(QObject):
         if self.parent.vna.box.isChecked() and self.parent.sm.box.isChecked():
             for i, freq in enumerate(self.freq_list):
                 if self.bool == False:
-                    print('LO')
                     return
 
                 self.parent.vna.meas_settings('2', str(freq), str(freq + 1e-9))

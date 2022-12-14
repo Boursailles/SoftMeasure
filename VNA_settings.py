@@ -35,8 +35,8 @@ class VNA_settings():
         self.params_path = os.path.join(os.getcwd(), 'VNA\parameters.txt')
 
         if os.path.exists(self.params_path) == False:
-            header = 'device\tstarting_frequency\tending_frequency\tstep_number\ttime_sweep\tIFBW\tpower'
-            values = str(['0', '0', '1', '2', '2', '1', '0'])[1: -1].replace(', ', '\t')
+            header = 'device\tstarting_frequency\tending_frequency\tstep_number\tIFBW\tpower'
+            values = str(['0', '0', '1', '2', '1', '0'])[1: -1].replace(', ', '\t')
             with open(self.params_path, 'w') as f:
                 f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
 
@@ -115,9 +115,9 @@ class VNA_settings():
         """
         Saving of all parameters in order to be used at the next opening.
         """
-
-        header = 'device\tstarting_frequency\tending_frequency\tstep_number\ttime_sweep\tIFBW\tpower'
-        values = str([str(self.device.currentIndex()), self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.sw_time.text(), self.IFBW.text(), str(self.power.currentIndex())])[1: -1].replace(', ', '\t')
+        
+        header = 'device\tstarting_frequency\tending_frequency\tstep_number\tIFBW\tpower'
+        values = str([str(self.device.currentIndex()), self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.IFBW.text(), str(self.power.currentIndex())])[1: -1].replace(', ', '\t')
         with open(self.params_path, 'w') as f:
             f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
 
