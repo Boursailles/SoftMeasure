@@ -331,8 +331,8 @@ class Valid:
         
         #Measurement in serie.
         else:
-            self.parent.vna.meas_settings(self.parent.vna.nb_step.text(), self.parent.f_start.text(), self.parent.vna.f_stop.text())
-            self.meas.meas_record()
+            self.parent.vna.meas_settings(self.parent.vna.nb_step.text(), self.parent.vna.f_start.text(), self.parent.vna.f_stop.text())
+            self.meas.meas()
 
         self.launch_progressbar()
 
@@ -369,7 +369,7 @@ class Valid:
         """
 
         self.okay.setDisabled(True)
-        self.time = None
+        self.time = 0
 
         # Adding of the time delay due to the SM measurement.
         if self.parent.sm.box.isChecked():
@@ -392,7 +392,7 @@ class Valid:
             self.time = int(self.time) + 1
 
 
-        if self.time != None:
+        if self.time != 1:
             # Setting of the progressbar parameters.
             self.progressbar.setMinimum(0)
             self.progressbar.setMaximum(self.time)
@@ -535,7 +535,7 @@ class Valid:
 
         if self.parent.sm.box.isChecked():
             self.parent.sm.off()
-
+        
         self.okay.setEnabled(True)
 
 
@@ -652,6 +652,7 @@ class Measure_QT(QObject):
 
             # Recording in files VNA measurements.
             self.vna_record(idx, 0, idx)
+        print('finished')
 
                 
     def meas(self):
@@ -721,11 +722,11 @@ class Measure_QT(QObject):
             self.len_amp_list = 0
             self.plots.emit((0, 0, 1, 1))
             self.meas_step(0)
-
+        
         self.off.emit()
 
     
-    def sm_record(self, idx, len, idx_amp, meas):
+    def sm_record(self, idx, len_loop, idx_amp, meas):
         """
         Recording SM measurement if a thread measurement is used.
 
@@ -753,14 +754,14 @@ class Measure_QT(QObject):
         # Recording of the averaging value.
         with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'a') as f:
             f.write(str(mean_meas))
-            if self.parent.vna.box.isChecked() and idx < len-1:
+            if self.parent.vna.box.isChecked() and idx < len_loop-1:
                 f.write(', ')
                     
 
         # Recording of the delta value.
         with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'a') as f:
             f.write(str(sigma))
-            if self.parent.vna.box.isChecked() and idx < len-1:
+            if self.parent.vna.box.isChecked() and idx < len_loop-1:
                 f.write(', ')
 
         # Reading of the file for the plotting.
@@ -771,7 +772,7 @@ class Measure_QT(QObject):
             pass
 
 
-    def vna_record(self, idx, len, idx_amp):
+    def vna_record(self, idx, len_loop, idx_amp):
         """
         Recording S-parameters of the VNA measurement if a thread measurement is used.
 
@@ -791,28 +792,32 @@ class Measure_QT(QObject):
             path = os.path.join(self.s_path, s)
             # Recording of the magnitude value.
             with open(os.path.join(path, 'Magnitude.txt'), 'a') as f:
+                s_list = getattr(self.parent.vna.instr, s)['mag']
                 if self.parent.sm.box.isChecked():
-                    f.write(str(getattr(self.parent.vna.instr, s)['mag'][0]))
-                    if idx < len-1:
+                    f.write(str(s_list[0]))
+                    if idx < len_loop-1:
                         f.write(', ')
                 
                 else:
-                    for val in getattr(self.parent.vna.instr, s)['mag']:
+                    s_len = len(s_list)
+                    for i, val in enumerate(s_list):
                         f.write(str(val))
-                        if idx < len-1:
+                        if i < s_len-1:
                             f.write(', ')
             
             # Recording of the phase value.
             with open(os.path.join(path, 'Phase.txt'), 'a') as f:
+                s_list = getattr(self.parent.vna.instr, s)['mag']
                 if self.parent.sm.box.isChecked():
-                    f.write(str(getattr(self.parent.vna.instr, s)['mag'][0]))
-                    if idx < len-1:
+                    f.write(str(s_list[0]))
+                    if idx < len_loop-1:
                         f.write(', ')
                 
                 else:
-                    for val in getattr(self.parent.vna.instr, s)['mag']:
+                    s_len = len(s_list)
+                    for i, val in enumerate(s_list):
                         f.write(str(val))
-                        if idx < len-1:
+                        if i < s_len-1:
                             f.write(', ')
 
         # Reading of the file for the plotting.
