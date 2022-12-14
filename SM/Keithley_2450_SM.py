@@ -60,6 +60,7 @@ class SM(object):
 
         # Make measurement
         self.sm.query('MEAS:VOLT?')
+
         # Take index of last measurement
         idx = int(self.sm.query(':TRAC:ACT:END?'))
         V = self.sm.query(f'TRAC:DATA? {idx}, {idx}')
@@ -69,6 +70,8 @@ class SM(object):
     def off(self):
         self.sm.write('OUTP OFF')
         self.sm.write('*RST')
+        
+        
 
         
         

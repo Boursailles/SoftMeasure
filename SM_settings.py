@@ -142,7 +142,7 @@ class SM_settings():
         """
         Sets the SM off.
         """
-
+        
         if self.instr:
             self.instr.off()
         self.led.turn_off()
