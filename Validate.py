@@ -328,13 +328,15 @@ class Valid:
             self.meas.finished.connect(self.meas_thread.exit)
 
             self.meas_thread.start()
+            self.launch_progressbar()
         
         #Measurement in serie.
         else:
             self.parent.vna.meas_settings(self.parent.vna.nb_step.text(), self.parent.vna.f_start.text(), self.parent.vna.f_stop.text())
             self.meas.meas()
 
-        self.launch_progressbar()
+            if self.parent.ps.box.isChecked():
+               self.launch_progressbar() 
 
 
     def msg_error(self, device):
@@ -652,7 +654,6 @@ class Measure_QT(QObject):
 
             # Recording in files VNA measurements.
             self.vna_record(idx, 0, idx)
-        print('finished')
 
                 
     def meas(self):
@@ -680,7 +681,6 @@ class Measure_QT(QObject):
 
             for i, amp in enumerate(self.amp_list):
                 if self.bool == False:
-                    print('COUCOU')
                     return self.off.emit()
 
                 # Creation of a new curve for each plots.
@@ -720,7 +720,9 @@ class Measure_QT(QObject):
 
         else:
             self.len_amp_list = 0
-            self.plots.emit((0, 0, 1, 1))
+            if self.parent.vna.box.isChecked() and self.parent.sm.box.isChecked():
+                self.plots.emit((0, 0, 1, 1))
+
             self.meas_step(0)
         
         self.off.emit()
