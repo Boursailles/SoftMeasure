@@ -71,7 +71,6 @@ class Valid:
 
         self.emergency = QPushButton()
         self.emergency.setIcon(QIcon('Emergency_button.jpg'))
-        self.emergency.clicked.connect(self.off)
         self.emergency.setVisible(False)
         retainsize = self.emergency.sizePolicy()
         retainsize.setRetainSizeWhenHidden(True)
@@ -86,7 +85,7 @@ class Valid:
         layout.addWidget(self.progressbar, 1, 0)
         layout.addWidget(self.estimated_time, 1, 1)
         layout.addWidget(self.display_time, 1, 2)
-        layout.addWidget(self.display_time, 1, 3)
+        layout.addWidget(self.emergency, 1, 3)
 
         self.box.setLayout(layout)
 
@@ -300,15 +299,17 @@ class Valid:
         # Connecting signals of the measurement class.
         self.meas.msg_error.connect(self.msg_error)
         self.meas.off.connect(self.off)
+        self.emergency.clicked.connect(self.meas.bool_switch)
 
         # Measurement in parralel (creation of a measurement Qhread).
         if self.parent.vna.box.isChecked() and self.parent.sm.box.isChecked():
+
             # Creating measurement QThread
             self.meas_thread = QThread()
             self.meas.moveToThread(self.meas_thread)
 
             self.meas_thread.started.connect(self.meas.meas)
-            self.meas.finished.connect(self.meas_thread.quit)
+            self.meas.finished.connect(self.meas_thread.exit)
 
             # Creating plot window
             self.plot_gui = Plot_GUI(self.parent)
@@ -321,6 +322,7 @@ class Valid:
             self.meas.plots.connect(self.plot_gui.V_curve)
             self.meas.Vwatcher.connect(self.plot_gui.Vwatcher.read_data.emit)
             self.meas.Swatcher.connect(self.plot_gui.Swatcher.read_data.emit)
+            self.meas.finished.connect(self.meas_thread.exit)
 
             self.meas_thread.start()
         
@@ -364,7 +366,7 @@ class Valid:
         """
 
         self.okay.setDisabled(True)
-        self.time = 0
+        self.time = None
 
         # Adding of the time delay due to the SM measurement.
         if self.parent.sm.box.isChecked():
@@ -377,18 +379,24 @@ class Valid:
         if self.parent.ps.box.isChecked():
             ps_sleep = 0.5
             ps_epsilon = 4e-4
-            I_start = float(self.parent.ps.i_start.text())
+            I_start = float(self.parent.ps.I_start.text())
             I_stop = float(self.parent.ps.I_stop.text())
             I_nb_step = float(self.parent.ps.nb_step.text())
             current_step = abs(I_start - I_stop)/I_nb_step
-            self.time = int((self.time + (math.log2(current_step/ps_epsilon) + 1)*ps_sleep)*I_nb_step + math.log2((I_start - I_stop)/ps_epsilon)*ps_sleep) + 1
+            self.time = int((self.time + (math.log2(current_step/ps_epsilon) + 1)*ps_sleep)*I_nb_step + math.log2(abs(I_start - I_stop)/ps_epsilon)*ps_sleep) + 1
+
+        else:
+            self.time = int(self.time) + 1
 
 
         if self.time != None:
             # Setting of the progressbar parameters.
             self.progressbar.setMinimum(0)
             self.progressbar.setMaximum(self.time)
-            self.set_progressbar_val(0)
+            print('TIME: ', self.time)
+
+            self.progressbar.setValue(0)
+            self.display_time.setText('')
             self.progressbar.setVisible(True)
             self.estimated_time.setVisible(True)
             self.display_time.setVisible(True)
@@ -400,10 +408,10 @@ class Valid:
 
             self.pb_qt.moveToThread(self.pb_thread)
             self.pb_thread.started.connect(self.pb_qt.loading)
-
+            
             self.pb_qt.change_value.connect(self.set_progressbar_val)
 
-            self.pb_qt.finished.connect(self.pb_thread.quit)
+            self.pb_qt.finished.connect(self.pb_thread.exit)
             self.pb_qt.finished.connect(self.end_progressbar)
 
             self.pb_thread.start()
@@ -446,7 +454,9 @@ class Valid:
         Hidding of the progressbar when the measurement is done.
         """
 
-        self.okay.setEnabled(True)
+        self.pb_qt.bool = False
+        self.display_time.setText('')
+        self.progressbar.setValue(0)
         self.progressbar.setVisible(False)
         self.estimated_time.setVisible(False)
         self.display_time.setVisible(False)
@@ -495,7 +505,7 @@ class Valid:
         """
         Turn off instrument(s).
         """
-
+        
         try:
             self.meas.finished.emit()
         except:
@@ -507,12 +517,11 @@ class Valid:
             pass
 
         try:
-            self.plot_gui.Vwatcher.finished.emit()
-            self.plot_gui.Swatcher.finished.emit()
+            self.plot_gui.Vthread.exit()
+            self.plot_gui.Sthread.exit()
         except:
             pass
         
-
         if self.parent.vna.box.isChecked():
             self.parent.vna.off()
 
@@ -524,6 +533,13 @@ class Valid:
 
         if self.parent.sm.box.isChecked():
             self.parent.sm.off()
+
+        print('MEAS: ', self.meas_thread.isRunning())
+        print('PB: ', self.pb_thread.isRunning())
+        print('SWATCHER: ', self.plot_gui.Sthread.isRunning())
+        print('VWATCHER: ', self.plot_gui.Vthread.isRunning())
+
+        self.okay.setEnabled(True)
 
 
 
@@ -540,6 +556,7 @@ class Progressbar_QT(QObject):
             Measurement time in sec.
         """
 
+        self.bool = True
         self.time = time
         super().__init__()
 
@@ -549,10 +566,11 @@ class Progressbar_QT(QObject):
         Update of the progressbar.
         """
         for i in range(1, self.time + 1):
+            if self.bool == False:
+                return
+                
             sleep(1)
             self.change_value.emit(i)
-
-        self.finished.emit()
 
 
 class Measure_QT(QObject):
@@ -597,6 +615,10 @@ class Measure_QT(QObject):
         # VNA Sweep of one frequency and the same + 1 Hz.
         if self.parent.vna.box.isChecked() and self.parent.sm.box.isChecked():
             for i, freq in enumerate(self.freq_list):
+                if self.bool == False:
+                    print('LO')
+                    return
+
                 self.parent.vna.meas_settings('2', str(freq), str(freq + 1e-9))
                 self.parent.vna.read_s_param()
 
@@ -608,10 +630,10 @@ class Measure_QT(QObject):
                     self.parent.sm.read_val()
                     sm_list.append(self.parent.sm.instr.V)
                     now = time()
-                    
+                
                 # Recording in files SM measurements.
                 self.sm_record(i, self.len_freq_list, idx, np.array(sm_list))
-                
+                    
                 # Recording in files VNA measurements.
                 self.vna_record(i, self.len_freq_list, idx)
 
@@ -639,7 +661,7 @@ class Measure_QT(QObject):
         """
         Main measurement method.
         """
-
+        
         # Creation of the VNA frequency sweep list.
         if self.parent.vna.box.isChecked():
             self.freq_list = np.linspace(float(self.parent.vna.f_start.text()), float(self.parent.vna.f_stop.text()), int(self.parent.vna.nb_step.text()))
@@ -659,6 +681,10 @@ class Measure_QT(QObject):
             self.colors = [colormap(normalize(n)) for n in range(len(self.amp_list))]
 
             for i, amp in enumerate(self.amp_list):
+                if self.bool == False:
+                    print('COUCOU')
+                    return self.off.emit()
+
                 # Creation of a new curve for each plots.
                 self.plots.emit(self.colors[i])
                 self.parent.ps.set_current(amp)
@@ -788,3 +814,7 @@ class Measure_QT(QObject):
 
         except:
             pass'''
+
+    
+    def bool_switch(self):
+        self.bool = False
