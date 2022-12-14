@@ -10,24 +10,39 @@ from Validate import *
 from Plot_GUI import *
 
 
+###############################################################################
+# This program is working with VNA_settings.py, PS_settings.py, GM_settings.py, SM_settings.py, and Validate.py files as children for SoftMeasure.
+# It contains useful code allowing to display main window.
+###############################################################################
+
 
 class Interface(QWidget):
     def __init__(self):
+        """
+        Main window of SoftMeasure.
+        """
+
+        # Adding of setting instruments tools in the main window.
         self.vna = VNA_settings()
         self.ps = PS_settings()
         self.gm = GM_settings()
         self.sm = SM_settings()
         
-
         # Main graphic window
         super().__init__()
         self.setWindowTitle('SoftMeasure')
         
-
         self.layout = QGridLayout()
+
+        self.widget_settings()
+        self.widget_valid()
 
 
     def widget_settings(self):
+        """
+        Placement of setting tools for all instruments.
+        """
+
         self.setting_box = QGroupBox('Settings')
         self.setting_box.setFlat(True)
 
@@ -45,6 +60,10 @@ class Interface(QWidget):
 
 
     def widget_valid(self):
+        """
+        Setting tools for the measure.
+        """
+
         self.valid = Valid(self)
         self.valid.widget()
 
@@ -61,8 +80,8 @@ if __name__ == '__main__':
         app = QApplication(sys.argv)
     
     soft = Interface()
-    soft.widget_valid()
-    soft.widget_settings()
+    '''soft.widget_valid()
+    soft.widget_settings()'''
     soft.show()
 
     sys.exit(app.exec_())

@@ -1,7 +1,6 @@
 import sys
 import matplotlib
 matplotlib.use('Qt5Agg')
-from time import sleep
 from threading import Timer
 import sys
 from PyQt5.QtCore import *
@@ -20,8 +19,8 @@ from matplotlib.figure import Figure
 
 
 ###############################################################################
-# This program is working with Interface.py file for SoftMeasure.
-# It contains useful code allowing to display measurements in live.
+# This program is working with Interface.py and Validate.py files as parents for SoftMeasure.
+# It contains useful code allowing to display measurement in live.
 ###############################################################################
 
 
@@ -30,10 +29,15 @@ class Plot_GUI(QWidget):
     def __init__(self, parent):
         """
         New window integrating plots.
+
+        ---------
+        Parameter:
+        parent: class
         """
 
         super().__init__()
         self.parent = parent
+        self.setWindowTitle('SoftMeasure')
         self.xdata = []
         self.widget()
 
@@ -145,7 +149,7 @@ class Plot_GUI(QWidget):
         ---------
         Parameter:
         idx: int
-            idx of the last index value in the last row in the Sfile
+            Index of the last row in the file.
         """
         
         ydata = np.genfromtxt(self.watch_Sfile, skip_header=1+idx, delimiter=', ')
@@ -171,7 +175,7 @@ class Plot_GUI(QWidget):
         ---------
         Parameter:
         idx: int
-            idx of the last index value in the last row in the Vfile
+            Index of the last row in the file.
         """
         
         ydata = np.genfromtxt(self.watch_Vfile, skip_header=1+idx, delimiter=', ')
@@ -289,7 +293,7 @@ class Watcher(QObject):
         ---------
         Parameter:
         watch_file: str
-            Path of the targeted file
+            Path of the targeted file.
         """
 
         self.watch_file = watch_file
@@ -337,9 +341,6 @@ class Graph_2D(QWidget):
         self.graph = Canva_2D(width=width, height=height, dpi=dpi)
         self.graph.axes.set_xlabel(xlabel)
         self.graph.axes.set_ylabel(ylabel)
-
-        '''self.graph.axes.set_xlim(xlim)
-        self.graph.axes.set_ylim(ylim)'''
 
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
         toolbar = NavigationToolbar(self.graph, self)

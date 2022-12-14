@@ -10,7 +10,7 @@ import numpy as np
 
 
 ###############################################################################
-# This program is working with Interface.py file for SoftMeasure.
+# This program is working with Interface.py and Validate.py files as parents and files in the VNA foler as children for SoftMeasure.
 # It contains useful code allowing to operate the Vector Network Analyzer (VNA).
 ###############################################################################
 
@@ -19,7 +19,7 @@ import numpy as np
 class VNA_settings():
     def __init__(self):
         """
-        Settings of the VNA which are generalized for any brand
+        Settings of the VNA which are generalized for any brand.
         """
 
         self.instr = None
@@ -28,7 +28,7 @@ class VNA_settings():
 
     def widget(self):
         """
-        Display of VNA widgets in the graphics interface
+        Display of VNA widgets in the graphics interface.
         """
 
         # File where all parameters in the GUI are saved.
@@ -45,7 +45,7 @@ class VNA_settings():
         self.box = QGroupBox('Vector Network Analyzer')
         self.box.setCheckable(True)
 
-        # Get the list of devices in VNA folder
+        # Get the list of devices in VNA folder.
         list_device = glob.glob('VNA/*.py')
         list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -4] for val in list_device]
         
@@ -53,7 +53,7 @@ class VNA_settings():
         self.device.addItems(list_device)
         self.device.setCurrentIndex(int(self.params['device']))
 
-        # Creation of a led in order to indicate if the instrument is connected or not
+        # Creation of a led in order to indicate if the instrument is connected or not.
         self.led = Led(self, shape=Led.circle, off_color=Led.red, on_color=Led.green)
         self.led.setFixedSize(self, 16)
         self.led.turn_off()
@@ -68,7 +68,7 @@ class VNA_settings():
         
         self.box.toggled.connect(checkBoxChangedAction)
 
-        # Creation of all parameters in the GUI
+        # Creation of all parameters in the GUI.
         self.f_start = QLineEdit()
         self.f_start.setText(str(self.params['starting_frequency']))
 
@@ -78,9 +78,6 @@ class VNA_settings():
         self.nb_step = QSpinBox()
         self.nb_step.setMaximum(10000)
         self.nb_step.setValue(int(self.params['step_number']))
-
-        self.sw_time = QLineEdit()
-        self.sw_time.setText(str(self.params['time_sweep']))
 
         self.IFBW = QLineEdit()
         self.IFBW.setText(str(self.params['IFBW']))
@@ -105,14 +102,11 @@ class VNA_settings():
         layout.addWidget(QLabel('Values number:'), 3, 0)
         layout.addWidget(self.nb_step, 3, 1, 1, 2)
 
-        layout.addWidget(QLabel('Sweep time [s]:'), 4, 0)
-        layout.addWidget(self.sw_time, 4, 1, 1, 2)
+        layout.addWidget(QLabel('IFBW [kHz]:'), 4, 0)
+        layout.addWidget(self.IFBW, 4, 1, 1, 2)
 
-        layout.addWidget(QLabel('IFBW [kHz]:'), 5, 0)
-        layout.addWidget(self.IFBW, 5, 1, 1, 2)
-
-        layout.addWidget(QLabel('Power [dBm]:'), 6, 0)
-        layout.addWidget(self.power, 6, 1, 1, 2)
+        layout.addWidget(QLabel('Power [dBm]:'), 5, 0)
+        layout.addWidget(self.power, 5, 1, 1, 2)
 
         self.box.setLayout(layout)
 
@@ -148,12 +142,9 @@ class VNA_settings():
     def initialization(self):
         """
         VNA initialization with following parameters (chosen in the interface, see Interface.py):
-        self.f_start: Starting frequency
-        self.f_stop: Stopping frequency
-        self.nb_step: Step number
+
         self.IFBW: Intermediate Frequency Band Width
         self.power: Signal power
-        self.sw_time: Time sweep
         """
 
         self.instr.initialization(self.IFBW.text(), self.power.currentText())
@@ -166,16 +157,10 @@ class VNA_settings():
         ---------
         Parameters:
         nb_point: str
-        
-        sw_time: str
 
         f_start: str
 
         f_stop: str
-
-        IFBW: str
-
-        power: str
         """
         
         self.instr.meas_settings(nb_point, f_start, f_stop)

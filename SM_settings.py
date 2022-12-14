@@ -11,7 +11,7 @@ import numpy as np
 
 
 ###############################################################################
-# This program is working with Interface.py file for SoftMeasure.
+# This program is working with Interface.py and Validate.py files as parents and files in the SM foler as children for SoftMeasure.
 # It contains useful code allowing to operate the SourceMeter (SM).
 ###############################################################################
 
@@ -20,7 +20,7 @@ import numpy as np
 class SM_settings():
     def __init__(self):
         """
-        Settings of the SM which are generalized for any brand
+        Settings of the SM which are generalized for any brand.
         """
 
         self.instr = None
@@ -29,7 +29,7 @@ class SM_settings():
 
     def widget(self):
         """
-        Display of SM widgets in the graphics interface
+        Display of SM widgets in the graphics interface.
         """
 
         # File where all parameters in the GUI are saved.
@@ -47,7 +47,7 @@ class SM_settings():
         self.box = QGroupBox('SourceMeter')
         self.box.setCheckable(True)
 
-        # Get the list of devices in VNA folder
+        # Get the list of devices in VNA folder.
         list_device = glob.glob('SM/*.py')
         list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -3] for val in list_device]
         
@@ -55,7 +55,7 @@ class SM_settings():
         self.device.addItems(list_device)
         self.device.setCurrentIndex(int(self.params['device']))
 
-        # Creation of a led in order to indicate if the instrument is connected or not
+        # Creation of a led in order to indicate if the instrument is connected or not.
         self.led = Led(self, shape=Led.circle, off_color=Led.red, on_color=Led.green)
         self.led.setFixedSize(self, 16)
         self.led.turn_off()
@@ -70,7 +70,7 @@ class SM_settings():
         
         self.box.toggled.connect(checkBoxChangedAction)
 
-        # Creation of all parameters in the GUI
+        # Creation of all parameters in the GUI.
         self.I = QLineEdit()
         self.I.setText(str(self.params['current']))
 

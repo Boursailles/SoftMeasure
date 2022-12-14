@@ -16,7 +16,7 @@ from Plot_GUI import *
 
 
 ###############################################################################
-# This program is working with Interface.py file for SoftMeasure.
+# This program is working with Interface.py file as parent, and Plot_GUI.py and Save.py files as children for SoftMeasure.
 # It contains useful code allowing to launch proper measurement.
 ###############################################################################
 
@@ -71,15 +71,13 @@ class Valid:
 
         self.emergency = QPushButton()
         self.emergency.setGeometry(200, 200, 100, 100)
-        """self.emergency.setStyleSheet('''border-image: url(Emergency_button.png); ''')"""
         self.emergency.setStyleSheet( "*{border-image: url(Emergency_button.png);} :hover{ border-image: url(Emergency_button_hovered.png);}")
         self.emergency.setFixedWidth(40)
         self.emergency.setFixedHeight(40)
-        '''self.emergency.setIcon(QIcon('Emergency_button.png'))'''
-        '''self.emergency.setVisible(False)
+        self.emergency.setVisible(False)
         retainsize = self.emergency.sizePolicy()
         retainsize.setRetainSizeWhenHidden(True)
-        self.emergency.setSizePolicy(retainsize)'''
+        self.emergency.setSizePolicy(retainsize)
 
 
         layout = QGridLayout()
@@ -539,11 +537,6 @@ class Valid:
         if self.parent.sm.box.isChecked():
             self.parent.sm.off()
 
-        print('MEAS: ', self.meas_thread.isRunning())
-        print('PB: ', self.pb_thread.isRunning())
-        print('SWATCHER: ', self.plot_gui.Sthread.isRunning())
-        print('VWATCHER: ', self.plot_gui.Vthread.isRunning())
-
         self.okay.setEnabled(True)
 
 
@@ -570,6 +563,7 @@ class Progressbar_QT(QObject):
         """"
         Update of the progressbar.
         """
+
         for i in range(1, self.time + 1):
             if self.bool == False:
                 return
@@ -742,6 +736,12 @@ class Measure_QT(QObject):
         idx: int
             Index bound to the PS iteration, otherwise equal to 0.
 
+        len: int
+            len of the loop.
+        
+        idx_amp: int
+            index of the current applied current.
+
         meas: array
             Set of measurement to making an average.
         """
@@ -765,13 +765,12 @@ class Measure_QT(QObject):
             if self.parent.vna.box.isChecked() and idx < len-1:
                 f.write(', ')
 
-        self.Vwatcher.emit(idx_amp)
         # Reading of the file for the plotting.
-        '''try:
+        try:
             self.Vwatcher.emit(idx_amp)
         
         except:
-            pass'''
+            pass
 
 
     def vna_record(self, idx, len, idx_amp):
@@ -782,6 +781,12 @@ class Measure_QT(QObject):
         Parameter:
         idx: int
             Index bound to the PS iteration, otherwise equal to 0.
+
+        len: int
+            len of the loop.
+        
+        idx_amp: int
+            index of the current applied current.
         """
         
         for s in self.sij:
@@ -812,14 +817,17 @@ class Measure_QT(QObject):
                         if idx < len-1:
                             f.write(', ')
 
-        self.Swatcher.emit(idx_amp)
         # Reading of the file for the plotting.
-        '''try:
+        try:
             self.Swatcher.emit(idx_amp)
 
         except:
-            pass'''
+            pass
 
     
     def bool_switch(self):
+        """
+        Stop measurement if the emergency button has been clicked.
+        """
+        
         self.bool = False

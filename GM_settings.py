@@ -10,7 +10,7 @@ import numpy as np
 
 
 ###############################################################################
-# This program is working with Interface.py file for SoftMeasure.
+# This program is working with Interface.py and Validate.py files as parents and files in the GM foler as children for SoftMeasure.
 # It contains useful code allowing to operate the GaussMeter (GM).
 ###############################################################################
 
@@ -19,7 +19,7 @@ import numpy as np
 class GM_settings:
     def __init__(self):
         """
-        Settings of the GM which are generalized for any brand
+        Settings of the GM which are generalized for any brand.
         """
 
         self.instr = None
@@ -28,7 +28,7 @@ class GM_settings:
 
     def widget(self):
         """
-        Display of GM widgets in the graphics interface
+        Display of GM widgets in the graphics interface.
         """
         
         # File where all parameters in the GUI are saved.
@@ -47,7 +47,7 @@ class GM_settings:
         self.box.setCheckable(True)
 
 
-        # Get the list of devices in PS folder
+        # Get the list of devices in PS folder.
         list_device = glob.glob('GM/*.py')
         list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -3] for val in list_device]
         
@@ -55,7 +55,7 @@ class GM_settings:
         self.device.addItems(list_device)
         self.device.setCurrentIndex(int(self.params['device']))
 
-        # Creation of a led in order to indicate if the instrument is connected or not
+        # Creation of a led in order to indicate if the instrument is connected or not.
         self.led = Led(self, shape=Led.circle, off_color=Led.red, on_color=Led.green)
         self.led.setFixedSize(self, 16)
         self.led.turn_off()
@@ -70,7 +70,7 @@ class GM_settings:
         
         self.box.toggled.connect(checkBoxChangedAction)
 
-        # Creation of all parameters in the GUI
+        # Creation of all parameters in the GUI.
         self.unit = QComboBox()
         self.unit.addItems(['G', 'T', 'Oe', 'A.m\u207B\u00B9'])
         self.unit.setCurrentIndex(int(self.params['unit']))
@@ -112,7 +112,7 @@ class GM_settings:
     def initialization(self):
         """
         GM initialization with the following parameter (chosen in the interface, see Interface.py):
-        self.unit: Number linked to the magnetic field unit (donner les valeurs)
+        self.unit: Number linked to the magnetic field unit.
         """
 
         self.instr.initialization(self.unit.currentIndex())
