@@ -70,11 +70,16 @@ class Valid:
         self.display_time.setSizePolicy(retainsize)
 
         self.emergency = QPushButton()
-        self.emergency.setIcon(QIcon('Emergency_button.jpg'))
-        self.emergency.setVisible(False)
+        self.emergency.setGeometry(200, 200, 100, 100)
+        """self.emergency.setStyleSheet('''border-image: url(Emergency_button.png); ''')"""
+        self.emergency.setStyleSheet( "*{border-image: url(Emergency_button.png);} :hover{ border-image: url(Emergency_button_hovered.png);}")
+        self.emergency.setFixedWidth(40)
+        self.emergency.setFixedHeight(40)
+        '''self.emergency.setIcon(QIcon('Emergency_button.png'))'''
+        '''self.emergency.setVisible(False)
         retainsize = self.emergency.sizePolicy()
         retainsize.setRetainSizeWhenHidden(True)
-        self.emergency.setSizePolicy(retainsize)
+        self.emergency.setSizePolicy(retainsize)'''
 
 
         layout = QGridLayout()
@@ -85,7 +90,7 @@ class Valid:
         layout.addWidget(self.progressbar, 1, 0)
         layout.addWidget(self.estimated_time, 1, 1)
         layout.addWidget(self.display_time, 1, 2)
-        layout.addWidget(self.emergency, 1, 3)
+        layout.addWidget(self.emergency, 1, 3, alignment=Qt.AlignCenter)
 
         self.box.setLayout(layout)
 
