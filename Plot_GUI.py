@@ -11,7 +11,6 @@ from PS_settings import *
 from GM_settings import *
 from SM_settings import *
 from Validate import *
-from QThreads import *
 from PyQt5.QtWidgets import *
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
