@@ -310,7 +310,7 @@ class Valid:
         self.meas.off.connect(self.off)
         self.emergency.clicked.connect(self.meas.bool_switch)
 
-         # Creating measurement QThread
+        # Creating measurement QThread
         self.meas_thread = QThread()
         self.meas.moveToThread(self.meas_thread)
 
