@@ -336,7 +336,6 @@ class Valid:
 
         self.meas_thread.start()
         self.launch_progressbar()
-        print('oui')
 
 
     def msg_error(self, device):
