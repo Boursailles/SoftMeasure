@@ -331,7 +331,7 @@ class Valid:
             self.meas.Swatcher.connect(self.plot_gui.Swatcher.read_data.emit)
             self.meas.finished.connect(self.meas_thread.exit)
 
-        else:
+        elif self.parent.vna.box.isChecked():
             self.parent.vna.meas_settings(self.parent.vna.nb_step.text(), self.parent.vna.f_start.text(), self.parent.vna.f_stop.text())
 
         self.meas_thread.start()
@@ -702,21 +702,25 @@ class Measure_QT(QObject):
                     # Recording of the static magnetic field value.
                     with open(os.path.join(self.path, 'H_values.txt'), 'a') as f:
                         f.write(self.parent.gm.instr.mag_value + '\n')
-                # New row for the next measurement step for the VNA and SM files.
-                sij = ['S11', 'S12', 'S21', 'S22']
-                for s in sij:
-                    path = os.path.join(self.s_path, s)
-                    with open(os.path.join(path, 'Magnitude.txt'), 'a') as f:
-                        f.write('\n')
-                            
-                    with open(os.path.join(path, 'Phase.txt'), 'a') as f:
+
+                # New row for the next measurement step for the VNA file.
+                if self.parent.vna.box.isChecked():
+                    sij = ['S11', 'S12', 'S21', 'S22']
+                    for s in sij:
+                        path = os.path.join(self.s_path, s)
+                        with open(os.path.join(path, 'Magnitude.txt'), 'a') as f:
+                            f.write('\n')
+                                
+                        with open(os.path.join(path, 'Phase.txt'), 'a') as f:
+                            f.write('\n')
+
+                # New row for the next measurement step for the SM file.
+                if self.parent.sm.box.isChecked():
+                    with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'a') as f:
                         f.write('\n')
 
-                with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'a') as f:
-                    f.write('\n')
-
-                with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'a') as f:
-                    f.write('\n')
+                    with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'a') as f:
+                        f.write('\n')
 
 
         else:
