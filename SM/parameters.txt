@@ -1,2 +1,2 @@
 device	current	measurement_period
-0	1e-08	2
+0	1e-08	2.0

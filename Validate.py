@@ -457,13 +457,13 @@ class Valid:
         Hidding of the progressbar when the measurement is done.
         """
 
-        self.pb_qt.bool = False
-        self.display_time.setText('')
-        self.progressbar.setValue(0)
         self.progressbar.setVisible(False)
         self.estimated_time.setVisible(False)
         self.display_time.setVisible(False)
         self.emergency.setVisible(False)
+        self.pb_qt.bool = False
+        self.display_time.setText('')
+        self.progressbar.setValue(0)
 
 
     def check_current_supplied(self):
@@ -637,6 +637,8 @@ class Measure_QT(QObject):
 
         # Set of SM measurement while a given time.
         elif self.parent.sm.box.isChecked():
+            sm_list = []
+            start = now = time()
             
             while now - start < self.sm_time:
                 self.parent.sm.read_val()
