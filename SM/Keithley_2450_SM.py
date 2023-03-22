@@ -40,11 +40,12 @@ class SM(object):
         self.sm.timeout = 2 * 60 * 1e3
 
         # Reset instrument
-        self.sm.write('*RST')
+        #self.sm.write('*RST')
         # The instrument with working as a current sourcing
         self.sm.write('SOUR:FUNC CURR')
         # Value of the applied current
         self.sm.write('SOUR:CURR:RANG ' + I)
+        self.sm.write('SOUR:CURR ' + I)
         # Applying of the current
         self.sm.write('OUTP ON')
 
@@ -69,7 +70,7 @@ class SM(object):
     
     def off(self):
         self.sm.write('OUTP OFF')
-        self.sm.write('*RST')
+        #self.sm.write('*RST')
         
         
 

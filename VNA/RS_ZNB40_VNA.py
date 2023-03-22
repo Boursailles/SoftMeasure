@@ -66,7 +66,7 @@ class VNA:
         self.power = power
 
         
-        self.vna.write("*RST")
+        #self.vna.write("*RST")
         
         # If VNA takes more than 2 min to answer, something's wrong
         self.vna.timeout = 2 * 60 * 1e3
