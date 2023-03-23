@@ -56,7 +56,7 @@ class SM(object):
 
     def read_val(self):
         """
-        Recording of voltage value
+        Recording of voltage value.
         """
 
         # Make measurement
@@ -66,6 +66,15 @@ class SM(object):
         idx = int(self.sm.query(':TRAC:ACT:END?'))
         V = self.sm.query(f'TRAC:DATA? {idx}, {idx}')
         self.V = float(V.replace('\n', ''))
+        
+        
+    def clear_buffer(self):
+        """
+        Clear active buffer.
+        """
+        self.sm.write('TRAC:CLE "defbuffer1"')
+        
+        
 
     
     def off(self):
