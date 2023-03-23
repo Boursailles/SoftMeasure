@@ -22,16 +22,13 @@ class SM_settings():
         """
         Settings of the SM which are generalized for any brand.
         """
-
         self.instr = None
         self.widget()
-
 
     def widget(self):
         """
         Display of SM widgets in the graphics interface.
         """
-
         # File where all parameters in the GUI are saved.
         self.params_path = os.path.join(os.getcwd(), 'SM\parameters.txt')
 
@@ -92,18 +89,15 @@ class SM_settings():
         
         self.box.setLayout(layout)
 
-
     def save_params(self):
         """
         Saving of all parameters in order to be used at the next opening.
         """
-        
         header = 'device\tcurrent\tmeasurement_period'
         values = str([str(self.device.currentIndex()), self.I.text(), self.meas_time.text()])[1: -1].replace(', ', '\t')
         with open(self.params_path, 'w') as f:
             f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
-            self.instr.clear_buffer()
-
+        self.instr.clear_buffer()
 
     def connection(self, rm):
         """
@@ -114,14 +108,10 @@ class SM_settings():
         rm: class
             Ressource Manager
         """
-
         path_device = 'SM.'+ self.device.currentText().replace(' ', '_') + '_SM'
-        
-        self.instr = importlib.import_module(path_device).SM(rm)
-
+        super(importlib.import_module(path_device).SM(rm)).__init__()
         self.led.turn_on()
 
-    
     def initialization(self):
         """
         SM initialization with following parameter (chosen in the interface, see Interface.py):
@@ -130,14 +120,12 @@ class SM_settings():
 
         self.instr.initialization(self.I.text())
 
-
     def read_val(self):
         """
         Recording of voltage value.
         """
         
         self.instr.read_val()
-
 
     def off(self):
         """
@@ -149,6 +137,21 @@ class SM_settings():
         self.led.turn_off()
 
 
+def create_instr(parent):
+    class Instr(parent):
+        def __init__(self, rm):
+            """
+            Connection to the chosen SM (see the linked SM file).
+
+            ---------
+            Parameter:
+            rm: class
+                Ressource Manager
+            """
+            path_device = 'SM.'+ self.device.currentText().replace(' ', '_') + '_SM'
+            super(importlib.import_module(path_device).SM(rm)).__init__()
+            self.led.turn_on()
+            
 
 if __name__ == '__main__':
     import sys
