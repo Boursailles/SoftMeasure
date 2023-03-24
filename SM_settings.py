@@ -102,8 +102,7 @@ class SM_settings():
         values = str([str(self.device.currentIndex()), self.I.text(), self.meas_time.text()])[1: -1].replace(', ', '\t')
         with open(self.params_path, 'w') as f:
             f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
-            self.instr.clear_buffer()
-
+        
 
     def connection(self, rm):
         """
@@ -137,6 +136,13 @@ class SM_settings():
         """
         
         self.instr.read_val()
+
+
+    def clear_buffer(self):
+        """
+        Clearing instrument buffer.
+        """
+        self.instr.clear_buffer()
 
 
     def off(self):

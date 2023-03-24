@@ -751,7 +751,10 @@ class Measure_QT(QObject):
         meas: array
             Set of measurement to making an average.
         """
-
+        
+        # Clear buffer.
+        self.parent.sm.clear_buffer()
+        
         # Averaging.
         mean_meas = mean(meas)
 
@@ -770,7 +773,7 @@ class Measure_QT(QObject):
             f.write(str(sigma))
             if self.parent.vna.box.isChecked() and idx < len_loop-1:
                 f.write(', ')
-
+        
         # Reading of the file for the plotting.
         try:
             self.Vwatcher.emit(idx_amp)
