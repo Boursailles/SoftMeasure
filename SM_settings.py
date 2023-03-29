@@ -128,6 +128,7 @@ class SM_settings():
         """
 
         self.instr.initialization(self.I.text())
+        self.clear_buffer()
 
 
     def read_val(self):

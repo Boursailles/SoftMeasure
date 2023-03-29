@@ -302,7 +302,7 @@ class Valid:
         Launching measurement.
         """
 
-        # Measurement class.
+        """# Measurement class.
         self.meas = Measure_QT(self.parent, self.path, self.s_path)
 
         # Connecting signals of the measurement class.
@@ -335,7 +335,30 @@ class Valid:
             self.parent.vna.meas_settings(self.parent.vna.nb_step.text(), self.parent.vna.f_start.text(), self.parent.vna.f_stop.text())
 
         self.meas_thread.start()
-        self.launch_progressbar()
+        self.launch_progressbar()"""
+        
+        
+        if self.parent.vna.box.isChecked():
+            self.freq_list = np.linspace(float(self.parent.vna.f_start.text()), float(self.parent.vna.f_stop.text()), int(self.parent.vna.nb_step.text()))
+            self.len_freq_list = len(self.freq_list)
+            
+        if self.parent.sm.box.isChecked():
+            self.sm_time = float(self.parent.sm.meas_time.text())
+            
+        if self.parent.ps.box.isChecked():
+            # Creation of the PS current sweep list.
+            self.amp_list = np.linspace(float(self.parent.ps.I_start.text()), float(self.parent.ps.I_stop.text()), int(self.parent.ps.nb_step.text()))
+            self.len_amp_list = len(self.amp_list)
+            
+            for i, amp in enumerate(self.amp_list):
+                    if self.bool == False:
+                        return self.off()
+                    
+                
+
+    
+        
+    
 
 
     def msg_error(self, device):
