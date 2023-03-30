@@ -1,17 +1,15 @@
 from time import sleep, time
 from statistics import mean 
 import os
-File_path = os.path.abspath(__file__)
-Parent_path = os.path.dirname(File_path)
-SM_path = os.path.join(Parent_path, 'SM')
-from SM.SM import *
+from SM.SM import COMMANDS as SM_COMMANDS
 
 
-class SM(COMMANDS):
+
+class SM(SM_COMMANDS):
     """Measurement method used for SoftMeasure program.
 
     Args:
-        COMMANDS (obj): Commands of the SM.
+        SM_COMMANDS (obj): Commands of the SM.
     """
     def __init__(self):
         """Initialize COMMANDS.
