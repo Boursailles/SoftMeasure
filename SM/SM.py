@@ -11,18 +11,17 @@ import numpy as np
 
 
 ###############################################################################
-# This program is working with Interface.py and Validate.py files as parents and files in the SM foler as children for SoftMeasure.
-# It contains useful code allowing to operate the SourceMeter (SM).
+# This file contain general SourceMeter (SM) settings to display and commands.
 ###############################################################################
 
 
 
-class SM_settings():
+class SETTINGS:
+    """Display of the SM settings.
+    """
     def __init__(self):
+        """Settings widgets for graphics interface of the SM which are generalized for any brand.
         """
-        Settings widgets for graphics interface of the SM which are generalized for any brand.
-        """
-
         # File where all parameters in the GUI are saved.
         self.params_path = os.path.join(os.getcwd(), 'SM\parameters.txt')
 
@@ -84,8 +83,7 @@ class SM_settings():
         self.box.setLayout(layout)
 
     def save_params(self):
-        """
-        Saving of all parameters in order to be used at the next opening.
+        """Saving of all parameters in order to be used at the next opening.
         """
         
         header = 'device\tcurrent\tmeasurement_period'
@@ -95,10 +93,7 @@ class SM_settings():
         
 
 class COMMANDS:
-    """Attach commands to the chosen instrument brand in SM directory.
-
-    Args:
-        SM_settings (obj): Settings of the SM.
+    """Attached commands to the chosen instrument brand in SM directory.
     """
     def __init__(self, settings):
         """Initialiaze entered settings values.
@@ -109,42 +104,32 @@ class COMMANDS:
         self.settings = settings
         
     def connection(self):
-        """
-        Connection to the chosen SM (see the linked SM file).
-
-        ---------
-        Parameter:
-        rm: class
-            Ressource Manager
+        """Connection to the chosen SM (see the linked SM file).
         """
         path_device = 'SM.'+ self.settings['device'].replace(' ', '_') + '_SM'
         self.instr = importlib.import_module(path_device).SM()
         self.led.turn_on()
   
     def initialization(self):
-        """
-        SM initialization with following parameter (chosen in the interface, see Interface.py):
+        """SM initialization with following parameter (chosen in the interface, see Interface.py):
         self.I: Applied current
         """
         self.instr.initialization(self.settings['I'])
         self.clear_buffer()
 
     def read_val(self):
-        """
-        Recording of voltage value.
+        """Recording of voltage value.
         """
         V = self.instr.read_val()
         return V
 
     def clear_buffer(self):
-        """
-        Clearing instrument buffer.
+        """Clearing instrument buffer.
         """
         self.instr.clear_buffer()
 
     def off(self):
-        """
-        Sets the SM off.
+        """Sets the SM off.
         """
         try:
             self.instr.off()
@@ -152,6 +137,7 @@ class COMMANDS:
             pass
         # See how to maintain it, change file place.
         self.led.turn_off()
+
 
 
 if __name__ == '__main__':

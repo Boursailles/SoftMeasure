@@ -6,7 +6,7 @@ import sys
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from VNA_settings import *
+from VNA.VNA import *
 from PS_settings import *
 from GM_settings import *
 from SM.SM import *

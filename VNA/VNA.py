@@ -10,27 +10,17 @@ import numpy as np
 
 
 ###############################################################################
-# This program is working with Interface.py and Validate.py files as parents and files in the VNA foler as children for SoftMeasure.
-# It contains useful code allowing to operate the Vector Network Analyzer (VNA).
+# This file contain general Vector Network Analyzer (VNA) settings to display and commands.
 ###############################################################################
 
 
 
-class VNA_settings():
+class SETTINGS:
+    """Display of the VNA settings.
+    """
     def __init__(self):
+        """Settings widgets for graphics interface of the VNA which are generalized for any brand.
         """
-        Settings of the VNA which are generalized for any brand.
-        """
-
-        self.instr = None
-        self.widget()
-
-
-    def widget(self):
-        """
-        Display of VNA widgets in the graphics interface.
-        """
-
         # File where all parameters in the GUI are saved.
         self.params_path = os.path.join(os.getcwd(), 'VNA\parameters.txt')
 
@@ -110,10 +100,8 @@ class VNA_settings():
 
         self.box.setLayout(layout)
 
-
     def save_params(self):
-        """
-        Saving of all parameters in order to be used at the next opening.
+        """Saving of all parameters in order to be used at the next opening.
         """
         
         header = 'device\tstarting_frequency\tending_frequency\tstep_number\tIFBW\tpower'
@@ -122,72 +110,62 @@ class VNA_settings():
             f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
 
 
-    def connection(self, rm):
+class COMMANDS:
+    """Attached commands to the chosen instrument brand in SM directory.
+    """
+    def __init__(self, settings):
+        """Initialiaze entered settings values.
+
+        Args:
+            settings (dict): dictionnary of setting values.
         """
-        Connection to the chosen VNA (see the linked VNA file)
-
-        ---------
-        Parameter:
-        rm: class
-            Ressource Manager
-        """
-
-        path_device = 'VNA.'+ self.device.currentText().replace(' ', '_') + '_VNA'
-        
-        self.instr = importlib.import_module(path_device).VNA(rm)
-
-        self.led.turn_on()
-
+        self.settings = settings
     
-    def initialization(self):
+    def connection(self):
+        """Connection to the chosen VNA (see the linked VNA file).
         """
-        VNA initialization with following parameters (chosen in the interface, see Interface.py):
-
+        path_device = 'VNA.'+ self.settings['device'].replace(' ', '_') + '_VNA'
+        self.instr = importlib.import_module(path_device).VNA()
+        self.led.turn_on()
+ 
+    def initialization(self):
+        """VNA initialization with following parameters (chosen in the interface, see Interface.py):
         self.IFBW: Intermediate Frequency Band Width
         self.power: Signal power
         """
-
-        self.instr.initialization(self.IFBW.text(), self.power.currentText())
-
+        self.instr.initialization(self.settings['IFBW'], self.settings['power'])
 
     def meas_settings(self, nb_point, f_start, f_stop):
+        """Change VNA settings.
+
+        Args:
+            nb_point (str): Number of steps.
+            f_start (str): Start frequency.
+            f_stop (str): Stop frequency.
         """
-        Change VNA settings.
-
-        ---------
-        Parameters:
-        nb_point: str
-
-        f_start: str
-
-        f_stop: str
-        """
-        
         self.instr.meas_settings(nb_point, f_start, f_stop)
 
-
     def read_s_param(self):
-        """
-        Recording of S-parameters in the following dictionaries:
+        """Recording of S-parameters in the following dictionaries:
         self.instr.s11
         self.instr.s12
         self.instr.s21
         self.instr.s22
 
         Each are sorted like:
-        self.instr.sij = {'dB': array, 'phase': array}
+        self.instr.sij = {'Magnitude': array, 'Phase': array}
         """
-        
         self.instr.read_s_param()
 
-
     def off(self):
+        """Sets the VNA off.
         """
-        Sets the VNA off.
-        """
-
-        if self.instr:
+        # Will remove calibration.
+        '''try:
             self.instr.off()
+        except NameError:
+            pass'''
+        # See how to maintain it, change file place.
         self.led.turn_off()
 
 

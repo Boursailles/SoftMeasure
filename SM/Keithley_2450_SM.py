@@ -14,7 +14,6 @@ class SM(object):
         """
         Keithley LS, model 2450
         """
-
         rm = visa.ResourceManager()
         self.sm = None
 
@@ -23,7 +22,6 @@ class SM(object):
 
         self.sm = rm.open_resource(self.address_sm)
         print('Connected to ' + self.sm.query("*IDN?"))
-
 
     def initialization(self, I):
         """
@@ -52,7 +50,6 @@ class SM(object):
         self.sm.write('VOLT:AVER:TCON REP')
         self.sm.write('VOLT:AVER ON')"""
 
-
     def read_val(self):
         """
         Recording of voltage value.
@@ -66,16 +63,12 @@ class SM(object):
         V = self.sm.query(f'TRAC:DATA? {idx}, {idx}')
         V = float(V.replace('\n', ''))
         return V
-        
-        
+               
     def clear_buffer(self):
         """
         Clear active buffer.
         """
         self.sm.write('TRAC:CLE "defbuffer1"')
-        
-        
-
     
     def off(self):
         self.sm.write('OUTP OFF')

@@ -1,3 +1,4 @@
+import pyvisa as visa
 import numpy as np
 
 
@@ -13,19 +14,8 @@ class VNA:
     def __init__(self, rm):
         """
         Rhode-Schwarz VNA, model ZNB40
-
-        self.f_start: Starting frequency
-        self.f_stop: Stopping frequency
-        self.nb_point: Step number of frequencies
-        self.IFBW: Intermediate Frequency Band Width
-        self.power: Signal power
-
-        ---------
-        Parameter:
-        rm: class
-            Ressource Manager
         """
-
+        rm = visa.ResourceManager()
         self.vna = None
         self.f_start = None
         self.f_stop = None
@@ -195,11 +185,11 @@ class VNA:
         s22_phase = np.array([float(val) for val in s22_phase.split(',')])
             
 
-        self.S11 = {'mag': s11_dB, 'phase': s11_phase}
-        self.S12 = {'mag': s12_dB, 'phase': s12_phase}
-        self.S21 = {'mag': s21_dB, 'phase': s21_phase}
-        self.S22 = {'mag': s22_dB, 'phase': s22_phase}
+        self.S11 = {'Magnitude': s11_dB, 'Phase': s11_phase}
+        self.S12 = {'Magnitude': s12_dB, 'Phase': s12_phase}
+        self.S21 = {'Magnitude': s21_dB, 'Phase': s21_phase}
+        self.S22 = {'Magnitude': s22_dB, 'Phase': s22_phase}
 
 
-    def off(self):
+    def reset(self):
         self.vna.write("*RST")
