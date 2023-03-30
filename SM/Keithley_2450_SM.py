@@ -1,3 +1,7 @@
+import pyvisa as visa
+
+
+
 ###############################################################################
 # This program is working with SM_settings.py file for SoftMeasure.
 # It contains useful code allowing to operate the Keithley SourceMeter (SM), model 2450.
@@ -6,17 +10,12 @@
 
 
 class SM(object):
-    def __init__(self, rm):
+    def __init__(self):
         """
         Keithley LS, model 2450
-
-        self.V: iSHE voltage
-        ---------
-        Parameter:
-        rm: class
-            Ressource Manager
         """
 
+        rm = visa.ResourceManager()
         self.sm = None
 
         # Setup PyVISA instrument
@@ -65,7 +64,8 @@ class SM(object):
         # Take index of last measurement
         idx = int(self.sm.query(':TRAC:ACT:END?'))
         V = self.sm.query(f'TRAC:DATA? {idx}, {idx}')
-        self.V = float(V.replace('\n', ''))
+        V = float(V.replace('\n', ''))
+        return V
         
         
     def clear_buffer(self):

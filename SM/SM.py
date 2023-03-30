@@ -20,16 +20,7 @@ import numpy as np
 class SM_settings():
     def __init__(self):
         """
-        Settings of the SM which are generalized for any brand.
-        """
-
-        self.instr = None
-        self.widget()
-
-
-    def widget(self):
-        """
-        Display of SM widgets in the graphics interface.
+        Settings widgets for graphics interface of the SM which are generalized for any brand.
         """
 
         # File where all parameters in the GUI are saved.
@@ -92,7 +83,6 @@ class SM_settings():
         
         self.box.setLayout(layout)
 
-
     def save_params(self):
         """
         Saving of all parameters in order to be used at the next opening.
@@ -104,7 +94,21 @@ class SM_settings():
             f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
         
 
-    def connection(self, rm):
+class COMMANDS:
+    """Attach commands to the chosen instrument brand in SM directory.
+
+    Args:
+        SM_settings (obj): Settings of the SM.
+    """
+    def __init__(self, settings):
+        """Initialiaze entered settings values.
+
+        Args:
+            settings (dict): dictionnary of setting values.
+        """
+        self.settings = settings
+        
+    def connection(self):
         """
         Connection to the chosen SM (see the linked SM file).
 
@@ -113,31 +117,24 @@ class SM_settings():
         rm: class
             Ressource Manager
         """
-
-        path_device = 'SM.'+ self.device.currentText().replace(' ', '_') + '_SM'
-        
-        self.instr = importlib.import_module(path_device).SM(rm)
-
+        path_device = 'SM.'+ self.settings['device'].replace(' ', '_') + '_SM'
+        self.instr = importlib.import_module(path_device).SM()
         self.led.turn_on()
-
-    
+  
     def initialization(self):
         """
         SM initialization with following parameter (chosen in the interface, see Interface.py):
         self.I: Applied current
         """
-
-        self.instr.initialization(self.I.text())
+        self.instr.initialization(self.settings['I'])
         self.clear_buffer()
-
 
     def read_val(self):
         """
         Recording of voltage value.
         """
-        
-        self.instr.read_val()
-
+        V = self.instr.read_val()
+        return V
 
     def clear_buffer(self):
         """
@@ -145,16 +142,16 @@ class SM_settings():
         """
         self.instr.clear_buffer()
 
-
     def off(self):
         """
         Sets the SM off.
         """
-        
-        if self.instr:
+        try:
             self.instr.off()
+        except NameError:
+            pass
+        # See how to maintain it, change file place.
         self.led.turn_off()
-
 
 
 if __name__ == '__main__':
