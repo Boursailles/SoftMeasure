@@ -15,7 +15,6 @@ from GM.GM import COMMANDS as GM_COMMANDS, SETTINGS as GM_SETTINGS
 
 
 
-
 class SM(SM_SETTINGS, SM_COMMANDS):
     """SM measurement method used for SoftMeasure program.
 
