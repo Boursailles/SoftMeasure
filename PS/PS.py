@@ -10,29 +10,19 @@ import numpy as np
 
 
 ###############################################################################
-# This program is working with Interface.py and Validate.py files as parents and files in the PS foler as children for SoftMeasure.
-# It contains useful code allowing to operate the Power Supply (PS).
+# This file contain general Power Supply (PS) settings to display and commands.
 ###############################################################################
 
 
 
-class PS_settings():
+class SETTINGS:
+    """Display of the PS settings.
+    """
     def __init__(self):
+        """Settings widgets for graphics interface of the PS which are generalized for any brand.
         """
-        Settings of the PS which are generalized for any brand.
-        """
-
-        self.instr = None
-        self.widget()
-
-
-    def widget(self):
-        """
-        Display of PS widgets in the graphics interface.
-        """
-
         # File where all parameters in the GUI are saved.
-        self.params_path = os.path.join(os.getcwd(), 'PS\parameters.txt')
+        self.params_path = os.path.join(os.getcwd(), 'parameters.txt')
 
         if os.path.exists(self.params_path) == False:
             header = 'device\tstarting_current\tending_current\tstep_number'
@@ -48,7 +38,7 @@ class PS_settings():
         
         
         # Get the list of devices in PS folder.
-        list_device = glob.glob('PS/*.py')
+        list_device = glob.glob('Devices/*.py')
         list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -3] for val in list_device]
         
         self.device = QComboBox()
@@ -99,53 +89,43 @@ class PS_settings():
             
         self.box.setLayout(layout)
 
-
     def save_params(self):
+        """Saving of all parameters in order to be used at the next opening.
         """
-        Saving of all parameters in order to be used at the next opening.
-        """
-        
         header = 'device\tstarting_current\tending_current\tstep_number'
         values = str([str(self.device.currentIndex()), self.I_start.text(), self.I_stop.text(), self.nb_step.text()])[1: -1].replace(', ', '\t')
         with open(self.params_path, 'w') as f:
             f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
 
 
-    def connection(self, rm):
-        """
-        Connection to the chosen PS (see the linked PS file).
-        
-        ---------
-        Parameter:
-        rm: class
-            Ressource Manager
-        """
+class COMMANDS:
+    """Attached commands to the chosen instrument brand in Device directory.
+    """
+    def __init__(self, settings):
+        """Initialiaze entered settings values.
 
-        path_device = 'PS.'+ self.device.currentText().replace(' ', '_') + '_PS'
-        self.instr = importlib.import_module(path_device).PS(rm)
-        self.led.turn_on()
-
+        Args:
+            settings (dict): dictionnary of setting values.
+        """
+        self.settings = settings
     
+    def connection(self):
+        """Connection to the chosen PS (see the linked PS file).
+        """
+        path_device = 'PS.'+ self.settings['device'].replace(' ', '_') + '_PS'
+        self.instr = importlib.import_module(path_device).PS()
+ 
     def initialization(self):
+        """PS initialization.
         """
-        PS initialization.
-        """
-
         self.instr.initialization()
 
-
     def set_current(self, amps):
-        """
-        PS setting current in Amps.
+        """PS setting current in Amps.
         """
         self.instr.set_current(amps)
-
-    
+  
     def off(self):
+        """Sets the PS off.
         """
-        Sets the PS off.
-        """
-
-        if self.instr:
-            self.instr.off()
-        self.led.turn_off()
+        self.instr.off()

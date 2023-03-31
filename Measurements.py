@@ -1,9 +1,11 @@
 import numpy as np
-from time import sleep, time
+from time import time
 from statistics import mean 
 import os
 from SM.SM import COMMANDS as SM_COMMANDS, SETTINGS as SM_SETTINGS
 from VNA.VNA import COMMANDS as VNA_COMMANDS, SETTINGS as VNA_SETTINGS
+from PS.PS import COMMANDS as PS_COMMANDS, SETTINGS as PS_SETTINGS
+from GM.GM import COMMANDS as GM_COMMANDS, SETTINGS as GM_SETTINGS
 
 
 
@@ -262,3 +264,110 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         """Set the device off.
         """
         self.led.turn_off()
+
+
+class PS(PS_SETTINGS, PS_COMMANDS):
+    """PS measurement method used for SoftMeasure program.
+
+    Args:
+        PS_SETTINGS (obj): Settings of the PS.
+        PS_COMMANDS (obj): Commands of the PS.
+    """
+    def __init__(self):
+        """Initialize settings.
+        """
+        super().__init__()
+        
+    def connection(self):
+        """Connection to the device
+        """
+        # New parameters are saved.
+        self.save_params()
+        self.settings = {'device': str(self.device.currentIndex()), 'I_start': self.I_start.text(), 'I_stop': self.I_stop.text(), 'nb_step': self.nb_step.text()}
+        
+        # Connection to the device.
+        PS_COMMANDS.__init__(self, self.settings)
+        super().connection()
+        self.led.turn_on()
+        
+        # Creation of the PS current sweep list.
+        self.amp_list = np.linspace(float(self.I_start.text()), float(self.I_stop.text()), int(self.nb_step.text()))
+        # Iteration on the step number of the PS.
+        self.idx = 0
+        
+    def file(self, path):
+        """Create measurement file.
+
+        Args:
+            path (str): Directory path for recording files.
+        """
+        self.path = path
+        
+        # Creating current file.
+        with open(os.path.join(self.path, 'I_values.txt'), 'w') as f:
+            f.write('Current [A]\n')
+            
+    def meas(self):
+        """Measurement with the initially chosen method.
+        """
+        amp = self.amp_list[self.idx]
+        self.set_current(amp)
+
+        # Recording of the current value.
+        with open(os.path.join(self.path, 'I_values.txt'), 'a') as f:
+            f.write(str(amp) + '\n')
+            
+        self.idx += 1
+        return self.idx
+        
+    def off(self):
+        """Set the device off.
+        """
+        super().off()
+        self.led.turn_off()
+
+
+class GM(GM_SETTINGS, GM_COMMANDS):
+    """GM measurement method used for SoftMeasure program.
+
+    Args:
+        GM_SETTINGS (obj): Settings of the GM.
+        GM_COMMANDS (obj): Commands of the GM.
+    """
+    def __init__(self):
+        """Initialize settings.
+        """
+        super().__init__()
+        
+    def connection(self):
+        """Connection to the device
+        """
+        # New parameters are saved.
+        self.save_params()
+        self.settings = {'device': str(self.device.currentIndex()), 'unit': str(self.unit.currentIndex())}
+        
+        # Connection to the device.
+        GM_COMMANDS.__init__(self, self.settings)
+        super().connection()
+        self.led.turn_on()
+        
+    def file(self, path):
+        """Create measurement file.
+
+        Args:
+            path (str): Directory path for recording files.
+        """
+        self.path = path
+        
+        # Creating magnetic field file.
+        with open(os.path.join(self.path, 'H_values.txt'), 'w') as f:
+            f.write('Magnetic Field [' + self.settings['unit'] + ']\n')
+        
+    def meas(self):
+        """Measurement with the initially chosen method.
+        """
+        H = self.read_mag_field()
+
+        # Recording of the static magnetic field value.
+        with open(os.path.join(self.path, 'H_values.txt'), 'a') as f:
+            f.write(str(H) + '\n')

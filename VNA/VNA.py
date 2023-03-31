@@ -22,7 +22,7 @@ class SETTINGS:
         """Settings widgets for graphics interface of the VNA which are generalized for any brand.
         """
         # File where all parameters in the GUI are saved.
-        self.params_path = os.path.join(os.getcwd(), 'VNA\parameters.txt')
+        self.params_path = os.path.join(os.getcwd(), 'parameters.txt')
 
         if os.path.exists(self.params_path) == False:
             header = 'device\tstarting_frequency\tending_frequency\tstep_number\tIFBW\tpower'
@@ -36,7 +36,7 @@ class SETTINGS:
         self.box.setCheckable(True)
 
         # Get the list of devices in VNA folder.
-        list_device = glob.glob('VNA/*.py')
+        list_device = glob.glob('Devices/*.py')
         list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -4] for val in list_device]
         
         self.device = QComboBox()
@@ -103,7 +103,6 @@ class SETTINGS:
     def save_params(self):
         """Saving of all parameters in order to be used at the next opening.
         """
-        
         header = 'device\tstarting_frequency\tending_frequency\tstep_number\tIFBW\tpower'
         values = str([str(self.device.currentIndex()), self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.IFBW.text(), str(self.power.currentIndex())])[1: -1].replace(', ', '\t')
         with open(self.params_path, 'w') as f:
@@ -111,7 +110,7 @@ class SETTINGS:
 
 
 class COMMANDS:
-    """Attached commands to the chosen instrument brand in SM directory.
+    """Attached commands to the chosen instrument brand in Device directory.
     """
     def __init__(self, settings):
         """Initialiaze entered settings values.
@@ -126,12 +125,9 @@ class COMMANDS:
         """
         path_device = 'VNA.'+ self.settings['device'].replace(' ', '_') + '_VNA'
         self.instr = importlib.import_module(path_device).VNA()
-        self.led.turn_on()
  
     def initialization(self):
-        """VNA initialization with following parameters (chosen in the interface, see Interface.py):
-        self.IFBW: Intermediate Frequency Band Width
-        self.power: Signal power
+        """VNA initialization with following parameters:
         """
         self.instr.initialization(self.settings['IFBW'], self.settings['power'])
 

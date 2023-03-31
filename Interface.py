@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from VNA.VNA import *
 from PS_settings import *
-from GM_settings import *
+from GM.GM import *
 from SM.SM import *
 from Validate import *
 from Plot_GUI import *

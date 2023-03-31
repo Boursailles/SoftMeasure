@@ -10,29 +10,19 @@ import numpy as np
 
 
 ###############################################################################
-# This program is working with Interface.py and Validate.py files as parents and files in the GM foler as children for SoftMeasure.
-# It contains useful code allowing to operate the GaussMeter (GM).
+# This file contain general GaussMeter (GM) settings to display and commands.
 ###############################################################################
 
 
 
-class GM_settings:
+class SETTINGS:
+    """Display of the GM settings.
+    """
     def __init__(self):
+        """Settings widgets for graphics interface of the GM which are generalized for any brand.
         """
-        Settings of the GM which are generalized for any brand.
-        """
-
-        self.instr = None
-        self.widget()
-
-
-    def widget(self):
-        """
-        Display of GM widgets in the graphics interface.
-        """
-        
         # File where all parameters in the GUI are saved.
-        self.params_path = os.path.join(os.getcwd(), 'GM\parameters.txt')
+        self.params_path = os.path.join(os.getcwd(), 'parameters.txt')
 
         if os.path.exists(self.params_path) == False:
             header = 'device\tunit'
@@ -48,7 +38,7 @@ class GM_settings:
 
 
         # Get the list of devices in PS folder.
-        list_device = glob.glob('GM/*.py')
+        list_device = glob.glob('Devices/*.py')
         list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -3] for val in list_device]
         
         self.device = QComboBox()
@@ -87,48 +77,41 @@ class GM_settings:
 
         self.box.setLayout(layout)
 
-
     def save_params(self):
+        """Saving of all parameters in order to be used at the next opening.
         """
-        Saving of all parameters in order to be used at the next opening.
-        """
-
         header = 'device\tunit'
         values = str([str(self.device.currentIndex()), str(self.unit.currentIndex())])[1: -1].replace(', ', '\t')
         with open(self.params_path, 'w') as f:
             f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
 
 
+class COMMANDS:
+    """Attached commands to the chosen instrument brand in Device directory.
+    """
+    def __init__(self, settings):
+        """Initialiaze entered settings values.
+
+        Args:
+            settings (dict): dictionnary of setting values.
+        """
+        self.settings = settings
+    
     def connection(self, rm):
         """
         Connection to the chosen GM (see the linked GM file).
         """
-
-        path_device = 'GM.'+ self.device.currentText().replace(' ', '_') + '_GM'
-        self.instr = importlib.import_module(path_device).GM(rm)
-        self.led.turn_off()
-
+        path_device = 'GM.'+ self.settings['device'].replace(' ', '_') + '_GM'
+        self.instr = importlib.import_module(path_device).GM()
     
     def initialization(self):
+        """GM initialization with the following parameter.
         """
-        GM initialization with the following parameter (chosen in the interface, see Interface.py):
-        self.unit: Number linked to the magnetic field unit.
-        """
-
-        self.instr.initialization(self.unit.currentIndex())
-
+        self.instr.initialization(self.settings['unit'])
 
     def read_mag_field(self):
         """
-        Recording of magnetic field in the variable self.instr.mag_value.
+        Recording of magnetic field.
         """
-        
-        self.instr.read_mag_field()
-
-
-    def off(self):
-        """
-        Sets the GM off.
-        """
-
-        self.led.turn_off()
+        H = self.instr.read_mag_field()
+        return H
