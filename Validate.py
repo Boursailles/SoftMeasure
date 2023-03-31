@@ -23,7 +23,7 @@ from Plot_GUI import *
 
 
 class Valid:
-    def __init__(self, parent):
+    def __init__(self, devices):
         """
         Class called when "okay" button is clicked.
 
@@ -36,17 +36,14 @@ class Valid:
         parent: class
         """
 
-        self.parent = parent
+        self.devices = devices
         self.path = None
         self.s_path = None
         self.kill = False
 
-
     def widget(self):
+        """Display of plot frame widgets.
         """
-        Display of plot frame widgets.
-        """
-
         self.save = Save()
         self.okay = QPushButton('Okay')
         self.okay.clicked.connect(self.okay_event)
@@ -85,7 +82,6 @@ class Valid:
         retainsize.setRetainSizeWhenHidden(True)
         self.emergency.setSizePolicy(retainsize)
 
-
         layout = QGridLayout()
 
         layout.addWidget(self.save.box, 0, 0, 1, 2)
@@ -100,23 +96,15 @@ class Valid:
 
 
     def okay_event(self):
+        """Event method when the "okay" button is clicked.
         """
-        Event method when the "okay" button is clicked.
-        """
-        
         self.path = self.save.pathEdit.text()
         
         self.save_params()
-        if self.check_kill():
-            return
-        
-        self.folder()
-        if self.check_kill():
-            return
-        
         self.connection()
-        if self.check_kill():
-            return
+        self.folder()
+        
+        
         
         self.initialization()
         if self.check_kill():
@@ -126,137 +114,37 @@ class Valid:
 
 
     def save_params(self):
+        """Save last filled QWidget parameters.
         """
-        Save last filled QWidget parameters.
+        for value in self.devices.values():
+            value.save_params()
+
+    def connection(self):
+        """Connection to the chosen instrument(s).
         """
-
-        try:
-            if self.parent.vna.box.isChecked():
-                self.parent.vna.save_params()
-
-            if self.parent.ps.box.isChecked():
-                self.parent.ps.save_params()
-
-            if self.parent.gm.box.isChecked():
-                self.parent.gm.save_params()
-
-            if self.parent.sm.box.isChecked():
-                self.parent.sm.save_params()
-        
-        except:
-            self.kill = True
-
+        for key, value, in self.devices.items():
+            if key == 'sm':
+                self.devices['sm'](self.devices['vna'].box.isChecked())
+            elif key == 'vna':
+                self.devices['vna'](self.devices['sm'].box.isChecked())
+            else:
+                value()
 
     def folder(self):
+        """Create folder, subfolders and txt files for futur measurements to the chosen file path and instrument(s).
         """
-        Create folder, subfolders and txt files for futur measurements to the chosen file path and instrument(s).
-        """
-
         # Creating parent folder.
         try:
             os.makedirs(self.path)
-
         except FileExistsError:
             pass
-
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             self.kill = True
-            QMessageBox.about(self.parent, 'Warning', 'The specified path cannot be found.')
+            QMessageBox.about(self.parent, 'Warning', e)
             return
 
 
-        if self.parent.vna.box.isChecked():
-            # Creating S folder if it does not exist.
-            self.s_path = os.path.join(self.path, 'S')
-            try:
-                os.makedirs(self.s_path)
 
-            except FileExistsError:
-                pass
-
-            # Creating frequency file with values.
-            f_values = np.linspace(float(self.parent.vna.f_start.text()), float(self.parent.vna.f_stop.text()), int(self.parent.vna.nb_step.text()))
-            np.savetxt(os.path.join(self.path, 'f_values.txt'), f_values, header='Frequency [GHz]', comments='')
-            
-
-            self.sij = ('S11', 'S12', 'S21', 'S22')
-            for s in self.sij:
-                # Creating Sij folders if they do not exist.
-                path = os.path.join(self.s_path, s)
-                try:
-                    os.makedirs(path)
-
-                except FileExistsError:
-                    pass
-
-                # Creating sij files.
-                with open(os.path.join(path, 'Magnitude.txt'), 'w') as f:
-                    f.write(f'{s} Magnitude [dB]\n')
-
-                with open(os.path.join(path, 'Phase.txt'), 'w') as f:
-                    f.write(f'{s} Phase [rad]\n')
-
-        
-        if self.parent.ps.box.isChecked():
-            # Creating current file.
-            with open(os.path.join(self.path, 'I_values.txt'), 'w') as f:
-                f.write('Current [A]\n')
-
-        if self.parent.gm.box.isChecked():
-            # Creating magnetic field file.
-            with open(os.path.join(self.path, 'H_values.txt'), 'w') as f:
-                f.write('Magnetic Field [' + self.parent.gm.unit.currentText() + ']\n')
-
-        if self.parent.sm.box.isChecked():
-            # Creating iSHE voltage file.
-            with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'w') as f:
-                f.write('iSHE Voltage [V]\n')
-
-            # Creating iSHE delta (error) iSHE voltage file.
-            with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'w') as f:
-                f.write('Detla iSHE Voltage [V]\n')
-
-
-    def connection(self):
-        """
-        Connection to the chosen instrument(s).
-        """
-
-        self.rm = visa.ResourceManager()
-        
-        if self.parent.ps.box.isChecked():
-            try:
-                self.parent.ps.connection(self.rm)
-                if self.check_current_supplied():
-                    # If the current supplied is higher than the max allowed value: return to the home window.
-                    return
-                
-            except:
-                return self.msg_error('PS')
-
-
-        if self.parent.vna.box.isChecked():
-            try:
-                self.parent.vna.connection(self.rm)
-
-            except:
-                return self.msg_error('VNA')
-        
-
-        if self.parent.gm.box.isChecked():
-            try:
-                self.parent.gm.connection(self.rm)
-
-            except:
-                return self.msg_error('GM')
-
-
-        if self.parent.sm.box.isChecked():
-            try:
-                self.parent.sm.connection(self.rm)
-                
-            except:
-                return self.msg_error('SM')
 
 
     def initialization(self):

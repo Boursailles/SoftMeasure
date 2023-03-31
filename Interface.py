@@ -28,6 +28,8 @@ class Interface(QWidget):
         self.gm = GM()
         self.sm = SM()
         
+        self.devices = {'vna': self.vna, 'ps': self.ps, 'gm': self.gm, 'sm': self.sm}
+        
         # Main graphic window
         super().__init__()
         self.setWindowTitle('SoftMeasure')
