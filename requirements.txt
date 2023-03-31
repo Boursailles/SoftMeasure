@@ -1,0 +1,5 @@
+PyQt5
+pyqt_led
+pyvisa
+numpy
+matplotlib

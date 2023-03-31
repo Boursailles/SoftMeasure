@@ -22,7 +22,7 @@ class SETTINGS:
         """Settings widgets for graphics interface of the GM which are generalized for any brand.
         """
         # File where all parameters in the GUI are saved.
-        self.params_path = os.path.join(os.getcwd(), 'parameters.txt')
+        self.params_path = os.path.join(os.getcwd(), 'GM/parameters.txt')
 
         if os.path.exists(self.params_path) == False:
             header = 'device\tunit'
@@ -38,7 +38,7 @@ class SETTINGS:
 
 
         # Get the list of devices in PS folder.
-        list_device = glob.glob('Devices/*.py')
+        list_device = glob.glob('GM/Devices/*.py')
         list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -3] for val in list_device]
         
         self.device = QComboBox()

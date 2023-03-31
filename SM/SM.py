@@ -23,7 +23,7 @@ class SETTINGS:
         """Settings widgets for graphics interface of the SM which are generalized for any brand.
         """
         # File where all parameters in the GUI are saved.
-        self.params_path = os.path.join(os.getcwd(), 'parameters.txt')
+        self.params_path = os.path.join(os.getcwd(), 'SM/parameters.txt')
 
         if os.path.exists(self.params_path) == False:
             header = 'device\tcurrent\tmeasurement_period'
@@ -38,7 +38,7 @@ class SETTINGS:
         self.box.setCheckable(True)
 
         # Get the list of devices in VNA folder.
-        list_device = glob.glob('Devices/*.py')
+        list_device = glob.glob('SM/Devices/*.py')
         list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -3] for val in list_device]
         
         self.device = QComboBox()
@@ -129,10 +129,7 @@ class COMMANDS:
     def off(self):
         """Sets the SM off.
         """
-        try:
-            self.instr.off()
-        except NameError:
-            pass
+        self.instr.off()
 
 
 

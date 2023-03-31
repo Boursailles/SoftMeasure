@@ -22,7 +22,7 @@ class SETTINGS:
         """Settings widgets for graphics interface of the VNA which are generalized for any brand.
         """
         # File where all parameters in the GUI are saved.
-        self.params_path = os.path.join(os.getcwd(), 'parameters.txt')
+        self.params_path = os.path.join(os.getcwd(), 'VNA/parameters.txt')
 
         if os.path.exists(self.params_path) == False:
             header = 'device\tstarting_frequency\tending_frequency\tstep_number\tIFBW\tpower'
@@ -36,7 +36,7 @@ class SETTINGS:
         self.box.setCheckable(True)
 
         # Get the list of devices in VNA folder.
-        list_device = glob.glob('Devices/*.py')
+        list_device = glob.glob('VNA/Devices/*.py')
         list_device = [os.path.splitext(val)[0].replace('\\', '/').split('/')[-1].replace('_', ' ')[: -4] for val in list_device]
         
         self.device = QComboBox()

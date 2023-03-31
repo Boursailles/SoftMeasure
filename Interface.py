@@ -3,19 +3,22 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from Measurements import SM, VNA, PS, GM 
-from Validate import *
-from Plot_GUI import *
+"""from Validate import *"""
 
 
 
 ###############################################################################
-# This program is working with VNA_settings.py, PS_settings.py, GM_settings.py, SM_settings.py, and Validate.py files as children for SoftMeasure.
-# It contains useful code allowing to display main window.
+# It contains useful code allowing to display main window for SoftMeasure program.
 ###############################################################################
 
 
 
 class Interface(QWidget):
+    """Main interface GUI.
+
+    Args:
+        QWidget (class): Widget for GUI interface.
+    """
     def __init__(self):
         """Main window of SoftMeasure.
         """
@@ -65,7 +68,7 @@ if __name__ == '__main__':
         app = QApplication(sys.argv)
     
     soft = Interface()
-    soft.widget_valid()
+    """soft.widget_valid()"""
     soft.widget_settings()
     soft.show()
 
