@@ -85,7 +85,6 @@ class SETTINGS:
     def save_params(self):
         """Saving of all parameters in order to be used at the next opening.
         """
-        
         header = 'device\tcurrent\tmeasurement_period'
         values = str([str(self.device.currentIndex()), self.I.text(), self.meas_time.text()])[1: -1].replace(', ', '\t')
         with open(self.params_path, 'w') as f:
@@ -108,7 +107,6 @@ class COMMANDS:
         """
         path_device = 'SM.'+ self.settings['device'].replace(' ', '_') + '_SM'
         self.instr = importlib.import_module(path_device).SM()
-        self.led.turn_on()
   
     def initialization(self):
         """SM initialization with following parameter (chosen in the interface, see Interface.py):
@@ -135,8 +133,6 @@ class COMMANDS:
             self.instr.off()
         except NameError:
             pass
-        # See how to maintain it, change file place.
-        self.led.turn_off()
 
 
 

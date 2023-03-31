@@ -157,17 +157,6 @@ class COMMANDS:
         """
         self.instr.read_s_param()
 
-    def off(self):
-        """Sets the VNA off.
-        """
-        # Will remove calibration.
-        '''try:
-            self.instr.off()
-        except NameError:
-            pass'''
-        # See how to maintain it, change file place.
-        self.led.turn_off()
-
 
 
 if __name__ == '__main__':

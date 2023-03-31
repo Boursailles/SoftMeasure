@@ -10,7 +10,7 @@ from VNA.VNA import SETTINGS as VNA_SETTINGS
 
 
 class SM(SM_SETTINGS, SM_COMMANDS):
-    """Measurement method used for SoftMeasure program.
+    """SM measurement method used for SoftMeasure program.
 
     Args:
         SM_SETTINGS (obj): Settings of the SM.
@@ -24,9 +24,14 @@ class SM(SM_SETTINGS, SM_COMMANDS):
     def connection(self):
         """Connection to the device.
         """
-        self.settings = {'device': self.device.text(), 'current': self.I.text(), 'measurement_period': self.meas_time.text()}
+        # New parameters are saved.
+        self.save_params()
+        self.settings = {'device': str(self.device.currentIndex()), 'current': self.I.text(), 'measurement_period': self.meas_time.text()}
+        
+        # Connection to the device.
         SM_COMMANDS.__init__(self, self.settings)
         super().connection()
+        self.led.turn_on()
     
     def file(self, path):
         """Create measurement file
@@ -80,21 +85,44 @@ class SM(SM_SETTINGS, SM_COMMANDS):
             """
             if self.parent.vna.box.isChecked() and idx < len_loop-1:
                 f.write(', ')"""
+                
+    def off(self):
+        """Set the device off.
+        """
+        super().off()
+        self.led.turn_off()
             
 
 class VNA(VNA_SETTINGS, VNA_COMMANDS):
-    """Measurement method used for SoftMeasure program.
+    """VNA measurement method used for SoftMeasure program.
 
     Args:
+        VNA_SETTINGS (obj): Settings of the VNA.
         VNA_COMMANDS (obj): Commands of the VNA.
     """
-    def __init__(self, SM=False, PS=0):
+    def __init__(self):
         """Initialize settings.
+        """
+        
+            
+        super().__init__()
+        
+    def connection(self, SM=False, PS=0):
+        """Connection to the device.
         
         Args:
             SM (bool): Indicates if SM instrument is used or not. Default to False.
             PS (any): If PS instrument is used, give its number of iterations. Default to 0.
         """
+        # New parameters are saved.
+        self.save_params()
+        self.settings = {'device': str(self.device.currentIndex()), 'f_start': self.f_start.text(), 'f_stop': self.f_stop.text(), 'nb_step': self.nb_step.text(), 'IFBW': self.IFBW.text(), 'power': str(self.power.currentIndex())}
+        
+        # Connection to the device.
+        VNA_COMMANDS.__init__(self, self.settings)
+        super().connection()
+        self.led.turn_on()
+        
         if SM:
             self.meas_method = 'meas_with_SM'
             # Iteration on the step number of the VNA.
@@ -107,16 +135,7 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
             
         if not PS:
             self.nb_iterations = 0
-            
-        super().__init__()
-        
-        
-    def connection(self):
-        """Connection to the device.
-        """
-        self.settings = {'device': self.device.text(), 'IFBW': self.IFBW.text(), 'power': self.power.text(), 'f_start': self.f_start.text(), 'f_stop': self.f_stop.text(), 'nb_step': self.nb_step.text()}
-        
-        
+             
     def file(self, path):
         """Create measurement file.
 
@@ -226,3 +245,7 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                         if i < s_len - 1:
                             f.write(', ')
     
+    def off(self):
+        """Set the device off.
+        """
+        self.led.turn_off()
