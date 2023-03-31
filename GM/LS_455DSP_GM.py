@@ -1,3 +1,7 @@
+import pyvisa as visa
+
+
+
 ###############################################################################
 # This program is working with GM_settings.py file for SoftMeasure.
 # It contains useful code allowing to operate the LakeShore (LS) GaussMeter (GM), model 455 DSP.
@@ -6,7 +10,7 @@
 
 
 class GM(object):
-    def __init__(self, rm):
+    def __init__(self):
         """
         LS GM, model 455 DSP
 
@@ -17,6 +21,7 @@ class GM(object):
         self.mag_value = None
 
         # Setup PyVISA instrument
+        rm = visa.ResourceManager()
         self.address_gm = 'GPIB0::9::INSTR'
 
         self.gm = rm.open_resource(self.address_gm)

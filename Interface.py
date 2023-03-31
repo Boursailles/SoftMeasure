@@ -2,12 +2,10 @@ import sys
 from PyQt5.QtCore import * 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from VNA.VNA import *
-from PS_settings import *
-from GM.GM import *
-from SM.SM import *
+from Measurements import SM, VNA, PS, GM 
 from Validate import *
 from Plot_GUI import *
+
 
 
 ###############################################################################
@@ -16,30 +14,25 @@ from Plot_GUI import *
 ###############################################################################
 
 
+
 class Interface(QWidget):
     def __init__(self):
+        """Main window of SoftMeasure.
         """
-        Main window of SoftMeasure.
-        """
-
         # Adding of setting instruments tools in the main window.
-        self.vna = VNA_settings()
-        self.ps = PS_settings()
-        self.gm = GM_settings()
-        self.sm = SM_settings()
+        self.vna = VNA()
+        self.ps = PS()
+        self.gm = GM()
+        self.sm = SM()
         
         # Main graphic window
         super().__init__()
         self.setWindowTitle('SoftMeasure')
-        
         self.layout = QGridLayout()
 
-
     def widget_settings(self):
+        """Placement of setting tools for all instruments.
         """
-        Placement of setting tools for all instruments.
-        """
-
         self.setting_box = QGroupBox('Settings')
         self.setting_box.setFlat(True)
 
@@ -55,19 +48,14 @@ class Interface(QWidget):
         self.layout.addWidget(self.setting_box, 0, 0)
         self.setLayout(self.layout)
 
-
     def widget_valid(self):
+        """Setting tools for the measure.
         """
-        Setting tools for the measure.
-        """
-
         self.valid = Valid(self)
         self.valid.widget()
 
         self.layout.addWidget(self.valid.box, 1, 0)
         self.setLayout(self.layout)
-
-
 
 
 

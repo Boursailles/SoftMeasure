@@ -11,7 +11,7 @@ import numpy as np
 
 
 class VNA:
-    def __init__(self, rm):
+    def __init__(self):
         """
         Rhode-Schwarz VNA, model ZNB40
         """

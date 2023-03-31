@@ -11,7 +11,7 @@ from time import sleep
 
 
 class PS:
-    def __init__(self, rm):
+    def __init__(self):
         """
         Danfysik PS, model 9700
 
@@ -20,7 +20,6 @@ class PS:
         self.f_stop: Stopping current
         self.nb_step: Step number of current values
         """
-
         self.I_max = 38
         self.ps = None
         self.I_start = None
@@ -30,6 +29,7 @@ class PS:
         self._current_ppm = 0
 
         # Setup PyVISA instrument
+        rm = visa.ResourceManager()
         self.address_ps = 'ASRL1::INSTR'
         self.ps = rm.open_resource(self.address_ps)
 

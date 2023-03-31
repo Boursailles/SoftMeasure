@@ -37,13 +37,13 @@ class VNA:
         # Setup PyVISA instrument
         address_vna = "TCPIP0::169.254.239.174::INSTR"
 
-        self.rm = visa.ResourceManager()
+        rm = visa.ResourceManager()
         try:
-            self.vna = self.rm.open_resource(self.address_vna)
+            self.vna = rm.open_resource(address_vna)
             print('Connected to ' + self.vna.query("*IDN?"))
 
         except visa.VisaIOError as e:
-            QMessageBox.about(self, "Warning", "Connection issue with VNA\nError Codes: " + self.rm.last_status+"\t" + self.rm.visalib.last_status)
+            QMessageBox.about(self, "Warning", "Connection issue with VNA\nError Codes: " + rm.last_status+"\t" + rm.visalib.last_status)
 
 
 
