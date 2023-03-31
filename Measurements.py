@@ -93,6 +93,8 @@ class SM(SM_SETTINGS, SM_COMMANDS):
             # Voir comment arranger ça
             if self.idx < self.step - 1:
                 f.write(', ')
+            else:
+                f.write('\n')
             
         # Recording of the delta value.
         with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'a') as f:
@@ -100,6 +102,8 @@ class SM(SM_SETTINGS, SM_COMMANDS):
             # Voir comment arranger ça
             if self.idx < self.step - 1:
                 f.write(', ')
+            else:
+                f.write('\n')
                 
     def record_without_VNA(self, V, sigma):
         """Measurement recording if VNA device is not used.
@@ -110,11 +114,11 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         """
         # Recording of the averaged value.
         with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'a') as f:
-            f.write(str(V))
+            f.write(str(V) + '\n')
             
         # Recording of the delta value.
         with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'a') as f:
-            f.write(str(sigma))
+            f.write(str(sigma) + '\n')
                   
     def off(self):
         """Set the device off.
@@ -134,6 +138,14 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         """Initialize settings.
         """
         super().__init__()
+
+    def ask_device(method):
+        def wrapped(self):
+            try:
+                method(self)
+            except NameError:
+                pass
+        return wrapped
         
     def connection(self, SM=False):
         """Connection to the device.
@@ -222,6 +234,8 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                 
                 if self.idx < self.step - 1:
                     f.write(', ')
+                else:
+                    f.write('\n')
             
             # Recording of the phase value.
             with open(os.path.join(path, 'Phase.txt'), 'a') as f:
@@ -230,6 +244,8 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                 
                 if self.idx < self.step - 1:
                     f.write(', ')
+                else:
+                    f.write('\n')
         self.idx += 1
                     
     def meas_without_SM(self):
@@ -249,6 +265,8 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                     f.write(str(val))
                     if i < self.step - 1:
                         f.write(', ')
+                    else:
+                        f.write('\n')
             
             # Recording of the phase value.
             with open(os.path.join(path, 'Phase.txt'), 'a') as f:
@@ -259,6 +277,8 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                     f.write(str(val))
                     if i < self.step - 1:
                         f.write(', ')
+                    else:
+                        f.write('\n')
     
     def off(self):
         """Set the device off.
@@ -371,3 +391,5 @@ class GM(GM_SETTINGS, GM_COMMANDS):
         # Recording of the static magnetic field value.
         with open(os.path.join(self.path, 'H_values.txt'), 'a') as f:
             f.write(str(H) + '\n')
+            
+
