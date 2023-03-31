@@ -3,21 +3,31 @@ from time import sleep, time
 from statistics import mean 
 import os
 from SM.SM import COMMANDS as SM_COMMANDS
+from SM.SM import SETTINGS as SM_SETTINGS
 from VNA.VNA import COMMANDS as VNA_COMMANDS
+from VNA.VNA import SETTINGS as VNA_SETTINGS
 
 
 
-class SM(SM_COMMANDS):
+class SM(SM_SETTINGS, SM_COMMANDS):
     """Measurement method used for SoftMeasure program.
 
     Args:
+        SM_SETTINGS (obj): Settings of the SM.
         SM_COMMANDS (obj): Commands of the SM.
     """
     def __init__(self):
-        """Initialize COMMANDS.
+        """Initialize settings.
         """
         super().__init__()
-        
+    
+    def connection(self):
+        """Connection to the device.
+        """
+        self.settings = {'device': self.device.text(), 'current': self.I.text(), 'measurement_period': self.meas_time.text()}
+        SM_COMMANDS.__init__(self, self.settings)
+        super().connection()
+    
     def file(self, path):
         """Create measurement file
 
@@ -72,14 +82,14 @@ class SM(SM_COMMANDS):
                 f.write(', ')"""
             
 
-class VNA(VNA_COMMANDS):
+class VNA(VNA_SETTINGS, VNA_COMMANDS):
     """Measurement method used for SoftMeasure program.
 
     Args:
         VNA_COMMANDS (obj): Commands of the VNA.
     """
     def __init__(self, SM=False, PS=0):
-        """Initialize COMMANDS.
+        """Initialize settings.
         
         Args:
             SM (bool): Indicates if SM instrument is used or not. Default to False.
@@ -99,6 +109,13 @@ class VNA(VNA_COMMANDS):
             self.nb_iterations = 0
             
         super().__init__()
+        
+        
+    def connection(self):
+        """Connection to the device.
+        """
+        self.settings = {'device': self.device.text(), 'IFBW': self.IFBW.text(), 'power': self.power.text(), 'f_start': self.f_start.text(), 'f_stop': self.f_stop.text(), 'nb_step': self.nb_step.text()}
+        
         
     def file(self, path):
         """Create measurement file.
