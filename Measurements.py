@@ -2,10 +2,8 @@ import numpy as np
 from time import sleep, time
 from statistics import mean 
 import os
-from SM.SM import COMMANDS as SM_COMMANDS
-from SM.SM import SETTINGS as SM_SETTINGS
-from VNA.VNA import COMMANDS as VNA_COMMANDS
-from VNA.VNA import SETTINGS as VNA_SETTINGS
+from SM.SM import COMMANDS as SM_COMMANDS, SETTINGS as SM_SETTINGS
+from VNA.VNA import COMMANDS as VNA_COMMANDS, SETTINGS as VNA_SETTINGS
 
 
 
@@ -21,7 +19,7 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         """
         super().__init__()
     
-    def connection(self):
+    def connection(self, VNA=None):
         """Connection to the device.
         """
         # New parameters are saved.
@@ -32,6 +30,13 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         SM_COMMANDS.__init__(self, self.settings)
         super().connection()
         self.led.turn_on()
+        
+        if VNA:
+            self.record_method = 'record_with_VNA'
+            self.step = VNA
+            self.idx = 0
+        else:
+            self.record_method = 'record_without_VNA'
     
     def file(self, path):
         """Create measurement file
@@ -69,23 +74,46 @@ class SM(SM_SETTINGS, SM_COMMANDS):
 
         # Delta (error).
         sigma = max(abs(V - V_list))
+        
+        # Recording of values.
+        getattr(self, self.record_method)(V, sigma)
+          
+    def record_with_VNA(self, V, sigma):
+        """Measurement recording if VNA device is used.
 
-    
+        Args:
+            V (float): Averaged voltage value.
+            sigma (float): Error on voltage value.
+        """
         # Recording of the averaged value.
         with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'a') as f:
             f.write(str(V))
             # Voir comment arranger ça
-            """if self.parent.vna.box.isChecked() and idx < len_loop-1:
-                f.write(', ')"""
+            if self.idx < self.step - 1:
+                f.write(', ')
             
         # Recording of the delta value.
         with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'a') as f:
             f.write(str(sigma))
             # Voir comment arranger ça
-            """
-            if self.parent.vna.box.isChecked() and idx < len_loop-1:
-                f.write(', ')"""
+            if self.idx < self.step - 1:
+                f.write(', ')
                 
+    def record_without_VNA(self, V, sigma):
+        """Measurement recording if VNA device is not used.
+
+        Args:
+            V (float): Averaged voltage value.
+            sigma (float): Error on voltage value.
+        """
+        # Recording of the averaged value.
+        with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'a') as f:
+            f.write(str(V))
+            
+        # Recording of the delta value.
+        with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'a') as f:
+            f.write(str(sigma))
+                  
     def off(self):
         """Set the device off.
         """
@@ -103,16 +131,13 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
     def __init__(self):
         """Initialize settings.
         """
-        
-            
         super().__init__()
         
-    def connection(self, SM=False, PS=0):
+    def connection(self, SM=False):
         """Connection to the device.
         
         Args:
             SM (bool): Indicates if SM instrument is used or not. Default to False.
-            PS (any): If PS instrument is used, give its number of iterations. Default to 0.
         """
         # New parameters are saved.
         self.save_params()
@@ -129,13 +154,11 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
             self.idx = 0
         else:
             self.meas_method = 'meas_without_SM'
+            self.meas_settings(self.settings['nb_step'], self.settings['f_start'], self.settings['f_stop'])
             
         # Step number of the VNA.
         self.step = int(self.settings['nb_step'])
-            
-        if not PS:
-            self.nb_iterations = 0
-             
+                        
     def file(self, path):
         """Create measurement file.
 
@@ -177,16 +200,12 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         Args:
             idx (int): Index of the current applied current step of PS if the instrument is used (equal to 0 if not used).
         """
-        getattr(self, self.meas_method)
-        
-        # Recording in files VNA measurements.
-        self.record(idx)
+        getattr(self, self.meas_method)()
                     
     def meas_with_SM(self):
-        """One Measurement with VNA on one applied frequency.
+        """Measurement with VNA on one applied frequency.
         """
         freq = self.freq_list[self.idx]
-        self.idx += 1
         
         self.meas_settings('2', freq, freq + 1e-9)
         self.read_s_param()
@@ -199,19 +218,23 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                 s_list = getattr(self.instr, s)['Magnitude']
                 f.write(str(s_list[0]))
                 
-                if idx < self.nb_iterations - 1:
+                if self.idx < self.step - 1:
                     f.write(', ')
+            
+            # Recording of the phase value.
+            with open(os.path.join(path, 'Phase.txt'), 'a') as f:
+                s_list = getattr(self.parent.vna.instr, s)['Phase']
+                f.write(str(s_list[0]))
+                
+                if self.idx < self.step - 1:
+                    f.write(', ')
+        self.idx += 1
                     
     def meas_without_SM(self):
-        self.meas_settings(self.settings['nb_step'], self.settings['f_start'], self.settings['f_stop'])
+        """Measurement with VNA on a frequency sweep.
+        """
         self.read_s_param()
         
-    def record(self, idx):
-        """Recording of S-parameters.
-
-        Args:
-            idx (int): Index of the current applied current step of PS if the instrument is used (equal to 0 if not used).
-        """
         for s in self.sij:
             path = os.path.join(self.s_path, s)
             
@@ -220,30 +243,20 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                 s_list = getattr(self.instr, s)['Magnitude']
                 f.write(str(s_list[0]))
                 
-                if idx < self.nb_iterations - 1:
-                    f.write(', ')
-                
-                else:
-                    s_len = len(s_list)
-                    for i, val in enumerate(s_list):
-                        f.write(str(val))
-                        if i < s_len - 1:
-                            f.write(', ')
+                for i, val in enumerate(s_list):
+                    f.write(str(val))
+                    if i < self.step - 1:
+                        f.write(', ')
             
             # Recording of the phase value.
             with open(os.path.join(path, 'Phase.txt'), 'a') as f:
                 s_list = getattr(self.parent.vna.instr, s)['Phase']
                 f.write(str(s_list[0]))
                 
-                if idx < self.nb_iterations - 1:
-                    f.write(', ')
-                
-                else:
-                    s_len = len(s_list)
-                    for i, val in enumerate(s_list):
-                        f.write(str(val))
-                        if i < s_len - 1:
-                            f.write(', ')
+                for i, val in enumerate(s_list):
+                    f.write(str(val))
+                    if i < self.step - 1:
+                        f.write(', ')
     
     def off(self):
         """Set the device off.
