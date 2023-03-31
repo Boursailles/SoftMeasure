@@ -10,7 +10,7 @@ from GM.GM import COMMANDS as GM_COMMANDS, SETTINGS as GM_SETTINGS
 
 
 ###############################################################################
-# This file contain all devices settings and measurements used in SoftMeasure software.
+# This file contains all devices settings and measurements used in SoftMeasure software.
 ###############################################################################
 
 
