@@ -97,7 +97,7 @@ class COMMANDS:
         """
         self.settings = settings
     
-    def connection(self, rm):
+    def connection(self):
         """
         Connection to the chosen GM (see the linked GM file).
         """

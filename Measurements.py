@@ -26,53 +26,53 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         """Initialize settings.
         """
         super().__init__()
-    
-    def connection(self, VNA=None):
-        """Connection to the device.
-        """
-        if self.box.isChecked():
-            # New parameters are saved.
-            self.save_params()
-            self.settings = {'device': str(self.device.currentIndex()), 'current': self.I.text(), 'measurement_period': self.meas_time.text()}
-            
-            # Connection to the device.
-            SM_COMMANDS.__init__(self, self.settings)
-            super().connection()
-            self.led.turn_on()
-            
-            if VNA:
-                self.record_method = 'record_with_VNA'
-                self.step = VNA
-                self.idx = 0
-            else:
-                self.record_method = 'record_without_VNA'
-            
-            decorator = active_device
-        else:
-            decorator = pass_device
-        
-        # Obtain method names except __init__ and current methods.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'connection']
-        
-        # Attribute decorator for all method.
-        for val in methods:
-            setattr(self, val, decorator(getattr(self, val)))      
-    
+
     def file(self, path):
         """Create measurement file
 
         Args:
             path (str): Directory path for recording files.
         """
-        self.path = path
-        
-        # Creating iSHE voltage file.
-        with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'w') as f:
-            f.write('iSHE Voltage [V]\n')
+        if self.box.isChecked():
+            self.path = path
+            
+            # Creating iSHE voltage file.
+            with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'w') as f:
+                f.write('iSHE Voltage [V]\n')
 
-        # Creating iSHE delta (error) iSHE voltage file.
-        with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'w') as f:
-            f.write('Detla iSHE Voltage [V]\n')
+            # Creating iSHE delta (error) iSHE voltage file.
+            with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'w') as f:
+                f.write('Detla iSHE Voltage [V]\n')
+            
+            decorator = active_device
+        else:
+            decorator = pass_device
+        
+        # Obtain method names except __init__ and current method.
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        
+        # Attribute decorator for all methods.
+        for val in methods:
+            setattr(self, val, decorator(getattr(self, val)))
+ 
+    def connection(self, VNA=0):
+        """Connection to the device.
+        """
+        # New parameters are saved.
+        self.save_params()
+        self.settings = {'device': str(self.device.currentIndex()), 'current': self.I.text(), 'measurement_period': self.meas_time.text()}
+        
+        # Connection to the device.
+        SM_COMMANDS.__init__(self, self.settings)
+        super().connection()
+        self.led.turn_on()
+        
+        if VNA != 0:
+            self.record_method = 'record_with_VNA'
+            self.step = VNA
+            self.idx = 0
+        else:
+            self.record_method = 'record_without_VNA'
             
     def meas(self):
         """One measurement set with SM.
@@ -156,6 +156,53 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         """Initialize settings.
         """
         super().__init__()
+
+    def file(self, path):
+        """Create measurement file.
+
+        Args:
+            path (str): Directory path for recording files.
+        """
+        if self.box.isChecked():
+            self.path = path
+
+            # Creating frequency file with values.
+            self.freq_list = np.linspace(float(self.settings['f_start']), float(self.settings['f_stop']), int(self.settings['nb_step']))
+            np.savetxt(os.path.join(self.path, 'f_values.txt'), self.freq_list, header='Frequency [GHz]', comments='')
+            
+            # Creating S folder if it does not exist.
+            self.s_path = os.path.join(self.path, 'S')
+            try:
+                os.makedirs(self.s_path)
+            except FileExistsError:
+                pass
+
+            self.sij = ('S11', 'S12', 'S21', 'S22')
+            for s in self.sij:
+                # Creating Sij folders if they do not exist.
+                path = os.path.join(self.s_path, s)
+                try:
+                    os.makedirs(path)
+                except FileExistsError:
+                    pass
+
+                # Creating sij files.
+                with open(os.path.join(path, 'Magnitude.txt'), 'w') as f:
+                    f.write(f'{s} Magnitude [dB]\n')
+                    
+                with open(os.path.join(path, 'Phase.txt'), 'w') as f:
+                        f.write(f'{s} Phase [rad]\n')
+                    
+            decorator = active_device
+        else:
+            decorator = pass_device
+        
+        # Obtain method names except __init__ and current method.
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        
+        # Attribute decorator for all methods.
+        for val in methods:
+            setattr(self, val, decorator(getattr(self, val)))
        
     def connection(self, SM=False):
         """Connection to the device.
@@ -163,72 +210,26 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         Args:
             SM (bool): Indicates if SM instrument is used or not. Default to False.
         """
-        if self.box.isChecked():
-            # New parameters are saved.
-            self.save_params()
-            self.settings = {'device': str(self.device.currentIndex()), 'f_start': self.f_start.text(), 'f_stop': self.f_stop.text(), 'nb_step': self.nb_step.text(), 'IFBW': self.IFBW.text(), 'power': str(self.power.currentIndex())}
-            
-            # Connection to the device.
-            VNA_COMMANDS.__init__(self, self.settings)
-            super().connection()
-            self.led.turn_on()
-            
-            if SM:
-                self.meas_method = 'meas_with_SM'
-                # Iteration on the step number of the VNA.
-                self.idx = 0
-            else:
-                self.meas_method = 'meas_without_SM'
-                self.meas_settings(self.settings['nb_step'], self.settings['f_start'], self.settings['f_stop'])
-                
-            # Step number of the VNA.
-            self.step = int(self.settings['nb_step'])
-            
-            decorator = active_device
+        # New parameters are saved.
+        self.save_params()
+        self.settings = {'device': str(self.device.currentIndex()), 'f_start': self.f_start.text(), 'f_stop': self.f_stop.text(), 'nb_step': self.nb_step.text(), 'IFBW': self.IFBW.text(), 'power': str(self.power.currentIndex())}
+        
+        # Connection to the device.
+        VNA_COMMANDS.__init__(self, self.settings)
+        super().connection()
+        self.led.turn_on()
+        
+        if SM:
+            self.meas_method = 'meas_with_SM'
+            # Iteration on the step number of the VNA.
+            self.idx = 0
         else:
-            decorator = pass_device
-        
-        # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'connection']
-        
-        # Attribute decorator for all methods.
-        for val in methods:
-            setattr(self, val, decorator(getattr(self, val)))
-                        
-    def file(self, path):
-        """Create measurement file.
-
-        Args:
-            path (str): Directory path for recording files.
-        """
-        self.path = path
-
-        # Creating frequency file with values.
-        self.freq_list = np.linspace(float(self.settings['f_start']), float(self.settings['f_stop']), int(self.settings['nb_step']))
-        np.savetxt(os.path.join(self.path, 'f_values.txt'), self.freq_list, header='Frequency [GHz]', comments='')
-        
-        # Creating S folder if it does not exist.
-        self.s_path = os.path.join(self.path, 'S')
-        try:
-            os.makedirs(self.s_path)
-        except FileExistsError:
-            pass
-
-        self.sij = ('S11', 'S12', 'S21', 'S22')
-        for s in self.sij:
-            # Creating Sij folders if they do not exist.
-            path = os.path.join(self.s_path, s)
-            try:
-                os.makedirs(path)
-            except FileExistsError:
-                pass
-
-            # Creating sij files.
-            with open(os.path.join(path, 'Magnitude.txt'), 'w') as f:
-                f.write(f'{s} Magnitude [dB]\n')
-                
-            with open(os.path.join(path, 'Phase.txt'), 'w') as f:
-                    f.write(f'{s} Phase [rad]\n')
+            self.meas_method = 'meas_without_SM'
+            self.meas_settings(self.settings['nb_step'], self.settings['f_start'], self.settings['f_stop'])
+            
+        # Step number of the VNA.
+        self.step = int(self.settings['nb_step'])
+        return self.step                        
                     
     def meas(self):
         """Measurement with the initially chosen method (with or without SM).
@@ -236,7 +237,8 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         Args:
             idx (int): Index of the current applied current step of PS if the instrument is used (equal to 0 if not used).
         """
-        getattr(self, self.meas_method)()
+        idx = getattr(self, self.meas_method)()
+        return idx
                     
     def meas_with_SM(self):
         """Measurement with VNA on one applied frequency.
@@ -269,6 +271,7 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                 else:
                     f.write('\n')
         self.idx += 1
+        return self.step - self.idx
                     
     def meas_without_SM(self):
         """Measurement with VNA on a frequency sweep.
@@ -301,6 +304,7 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                         f.write(', ')
                     else:
                         f.write('\n')
+        return 0
     
     def off(self):
         """Set the device off.
@@ -320,47 +324,49 @@ class PS(PS_SETTINGS, PS_COMMANDS):
         """
         super().__init__()
         
-    def connection(self):
-        """Connection to the device
-        """
-        if self.box.isChecked():
-            # New parameters are saved.
-            self.save_params()
-            self.settings = {'device': str(self.device.currentIndex()), 'I_start': self.I_start.text(), 'I_stop': self.I_stop.text(), 'nb_step': self.nb_step.text()}
-            
-            # Connection to the device.
-            PS_COMMANDS.__init__(self, self.settings)
-            super().connection()
-            self.led.turn_on()
-            
-            # Creation of the PS current sweep list.
-            self.amp_list = np.linspace(float(self.I_start.text()), float(self.I_stop.text()), int(self.nb_step.text()))
-            # Iteration on the step number of the PS.
-            self.idx = 0
-            
-            decorator = active_device
-        else:
-            decorator = pass_device
-        
-        # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'connection']
-        
-        # Attribute decorator for all methods.
-        for val in methods:
-            setattr(self, val, decorator(getattr(self, val)))
-        
     def file(self, path):
         """Create measurement file.
 
         Args:
             path (str): Directory path for recording files.
         """
-        self.path = path
-        
-        # Creating current file.
-        with open(os.path.join(self.path, 'I_values.txt'), 'w') as f:
-            f.write('Current [A]\n')
+        if self.box.isChecked():
+            self.path = path
             
+            # Creating current file.
+            with open(os.path.join(self.path, 'I_values.txt'), 'w') as f:
+                f.write('Current [A]\n')
+            
+            decorator = active_device
+        else:
+            decorator = pass_device
+        
+        # Obtain method names except __init__ and current method.
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        
+        # Attribute decorator for all methods.
+        for val in methods:
+            setattr(self, val, decorator(getattr(self, val)))
+        
+    def connection(self):
+        """Connection to the device
+        """
+        # New parameters are saved.
+        self.save_params()
+        self.settings = {'device': str(self.device.currentIndex()), 'I_start': self.I_start.text(), 'I_stop': self.I_stop.text(), 'nb_step': self.nb_step.text()}
+        
+        # Connection to the device.
+        PS_COMMANDS.__init__(self, self.settings)
+        super().connection()
+        self.led.turn_on()
+        
+        # Creation of the PS current sweep list.
+        self.amp_list = np.linspace(float(self.settings['I_start']), float(self.settings['I_stop']), int(self.settings['nb_step']))
+        # Step number of the PS.
+        self.step = int(self.settings['nb_step']) 
+        # Iteration on the step number of the PS.
+        self.idx = 0
+              
     def meas(self):
         """Measurement with the initially chosen method.
         """
@@ -372,7 +378,7 @@ class PS(PS_SETTINGS, PS_COMMANDS):
             f.write(str(amp) + '\n')
             
         self.idx += 1
-        return self.idx
+        return self.step - self.idx
         
     def off(self):
         """Set the device off.
@@ -392,42 +398,42 @@ class GM(GM_SETTINGS, GM_COMMANDS):
         """Initialize settings.
         """
         super().__init__()
-        
-    def connection(self):
-        """Connection to the device
-        """
-        if self.box.isChecked:
-            # New parameters are saved.
-            self.save_params()
-            self.settings = {'device': str(self.device.currentIndex()), 'unit': str(self.unit.currentIndex())}
-            
-            # Connection to the device.
-            GM_COMMANDS.__init__(self, self.settings)
-            super().connection()
-            self.led.turn_on()
-            
-            decorator = active_device
-        else:
-            decorator = pass_device
-        
-        # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'connection']
-        
-        # Attribute decorator for all methods.
-        for val in methods:
-            setattr(self, val, decorator(getattr(self, val)))
-        
+
     def file(self, path):
         """Create measurement file.
 
         Args:
             path (str): Directory path for recording files.
         """
-        self.path = path
+        if self.box.isChecked:
+            self.path = path
+            
+            # Creating magnetic field file.
+            with open(os.path.join(self.path, 'H_values.txt'), 'w') as f:
+                f.write('Magnetic Field [' + self.settings['unit'] + ']\n')
         
-        # Creating magnetic field file.
-        with open(os.path.join(self.path, 'H_values.txt'), 'w') as f:
-            f.write('Magnetic Field [' + self.settings['unit'] + ']\n')
+            decorator = active_device
+        else:
+            decorator = pass_device
+        
+        # Obtain method names except __init__ and current method.
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        
+        # Attribute decorator for all methods.
+        for val in methods:
+            setattr(self, val, decorator(getattr(self, val)))
+        
+    def connection(self):
+        """Connection to the device
+        """
+        # New parameters are saved.
+        self.save_params()
+        self.settings = {'device': str(self.device.currentIndex()), 'unit': str(self.unit.currentIndex())}
+        
+        # Connection to the device.
+        GM_COMMANDS.__init__(self, self.settings)
+        super().connection()
+        self.led.turn_on()
         
     def meas(self):
         """Measurement with the initially chosen method.
@@ -452,7 +458,7 @@ def pass_device(method):
         method (method): Method not used.
     """
     def wrapped():
-        pass
+        return 0
     return wrapped
 
 def active_device(method):
