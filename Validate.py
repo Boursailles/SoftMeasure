@@ -188,10 +188,7 @@ class Valid:
                     if self.bool == False:
                         return self.off()
                     
-                
-
-    
-        
+     
     
 
 
@@ -418,7 +415,6 @@ class Measure_QT(QObject):
         """
         super().__init__()
         self.devices = devices
-
 
     def meas(self):
         PS_step = np.inf
