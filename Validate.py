@@ -30,6 +30,8 @@ class Valid:
         self.devices = devices
         # Directory path for measurement files recording. Default to None. 
         self.path = None
+        # Error handling.
+        sys.excepthook = self.error_handler
 
     def widget(self):
         """Display of plot frame widgets.
@@ -71,6 +73,7 @@ class Valid:
         retainsize = self.emergency.sizePolicy()
         retainsize.setRetainSizeWhenHidden(True)
         self.emergency.setSizePolicy(retainsize)
+        self.cancel.clicked.connect(self.off())
 
         layout = QGridLayout()
 
@@ -131,98 +134,64 @@ class Valid:
         for value in self.devices.values():
             value.initialization()
 
-    def meas_record(self):
+    def measurement(self):
+        """Launching measurement.
         """
-        Launching measurement.
+        # Measurement class.
+        self.meas = Measure_QT(self.devices)
+
         """
-
-        """# Measurement class.
-        self.meas = Measure_QT(self.parent, self.path, self.s_path)
-
         # Connecting signals of the measurement class.
         self.meas.msg_error.connect(self.msg_error)
         self.meas.off.connect(self.off)
-        self.emergency.clicked.connect(self.meas.bool_switch)
+        self.emergency.clicked.connect(self.meas.bool_switch)"""
 
-        # Creating measurement QThread
+        # Creating measurement QThread.
         self.meas_thread = QThread()
         self.meas.moveToThread(self.meas_thread)
-
         self.meas_thread.started.connect(self.meas.meas)
         self.meas.finished.connect(self.meas_thread.exit)
 
-        # Creating plot window
-        if self.parent.vna.box.isChecked() and self.parent.sm.box.isChecked():
-            self.plot_gui = Plot_GUI(self.parent)
-
-            self.nb_step = int(float(self.parent.vna.nb_step.text()))
-            self.plot_gui.S_QT(os.path.join(self.s_path, 'S21/Magnitude.txt'))
-            self.plot_gui.V_QT(os.path.join(self.path, 'V-iSHE_values.txt'), os.path.join(self.path, 'Delta_V-iSHE_values.txt'))
-
-            self.meas.plots.connect(self.plot_gui.S_curve)
-            self.meas.plots.connect(self.plot_gui.V_curve)
-            self.meas.Vwatcher.connect(self.plot_gui.Vwatcher.read_data.emit)
-            self.meas.Swatcher.connect(self.plot_gui.Swatcher.read_data.emit)
-            self.meas.finished.connect(self.meas_thread.exit)
-
-        elif self.parent.vna.box.isChecked():
-            self.parent.vna.meas_settings(self.parent.vna.nb_step.text(), self.parent.vna.f_start.text(), self.parent.vna.f_stop.text())
-
+        # Launch measurement and progressbar.
         self.meas_thread.start()
-        self.launch_progressbar()"""
+        self.launch_progressbar()
+                
+    def off(self):
+        """Turn off instrument(s).
+        """
+        try:
+            self.meas.finished()
+        except NameError:
+            pass
         
-        
-        if self.parent.vna.box.isChecked():
-            self.freq_list = np.linspace(float(self.parent.vna.f_start.text()), float(self.parent.vna.f_stop.text()), int(self.parent.vna.nb_step.text()))
-            self.len_freq_list = len(self.freq_list)
-            
-        if self.parent.sm.box.isChecked():
-            self.sm_time = float(self.parent.sm.meas_time.text())
-            
-        if self.parent.ps.box.isChecked():
-            # Creation of the PS current sweep list.
-            self.amp_list = np.linspace(float(self.parent.ps.I_start.text()), float(self.parent.ps.I_stop.text()), int(self.parent.ps.nb_step.text()))
-            self.len_amp_list = len(self.amp_list)
-            
-            for i, amp in enumerate(self.amp_list):
-                    if self.bool == False:
-                        return self.off()
-                    
-     
+        for value in self.devices.values():
+            value.off()
+        # Voir quoi faire de ça
+        self.okay.setEnabled(True)
     
+    def error_handler(self, exctype, value, traceback):
+        """All kind of errors are handled, and call "off" method.
 
-
-    def msg_error(self, device):
+        Args:
+            exctype (str): Type of the exception raised.
+            value (str): instance of the exception raised.
+            traceback (str): traceback of the exception raised
         """
-        Display of a message error due to the displayed device.
+        # Stop all instruments.
+        self.off()
+        # Create a message box for the error.
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setText('An error occured!')
+        msg.setInformativeText('<b>Error type:<b> ' + exctype + '<br><b>Value:<b> ' + value + '<br><b>Traceback:<b> ' + traceback)
+        msg.setWindowTitle("Error")
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
 
-        ---------
-        Parameter:
-        device: str
-            Device malfunctionning
-        """
-
-        if device == 'VNA':
-            word = 'VNA'
-
-        elif device == 'PS':
-            word = 'Power Supply'
-
-        elif device == 'GM':
-            word = 'GaussMeter'
-
-        elif device == 'SM':
-            word = 'SourceMeter'
-
-        self.kill = True
-        QMessageBox.about(self.parent, 'Error', f'Connection issue with {word}.')
-
-
+    '''
     def launch_progressbar(self):
+        """Display of the progressbar.
         """
-        Display of the progressbar.
-        """
-
         self.okay.setDisabled(True)
         self.time = 0
 
@@ -319,7 +288,7 @@ class Valid:
         self.display_time.setText('')
         self.progressbar.setValue(0)
 
-
+    '''
     def check_current_supplied(self):
         """
         Checking the current supplied. If it is higher than the threshold, the current will not be applied. If it is higher than 16 A: Ask if the user want to continue.
@@ -344,30 +313,6 @@ class Valid:
         QMessageBox.about(self.parent, 'Warning', 'Do not forget to start the cooling circuit.')
 
 
-    def check_kill(self):
-        """
-        Checking if an issue has occured.
-        """
-
-        if self.kill:
-            self.kill = False
-            self.off()
-            return True
-        
-        else:
-            return False
-
-
-    def off(self):
-        """Turn off chosen instrument(s).
-        """
-        for value in self.devices.values():
-            value.off()
-        #Voir quoi faire de ça
-        self.okay.setEnabled(True)
-
-
-
 class Progressbar_QT(QObject):
     change_value = pyqtSignal(int)
     finished = pyqtSignal()
@@ -384,7 +329,6 @@ class Progressbar_QT(QObject):
         self.bool = True
         self.time = time
         super().__init__()
-
 
     def loading(self):
         """"
@@ -403,9 +347,6 @@ class Measure_QT(QObject):
     finished = pyqtSignal()
     off = pyqtSignal()
     msg_error = pyqtSignal(str)
-    plots = pyqtSignal(tuple)
-    Vwatcher = pyqtSignal(int)
-    Swatcher = pyqtSignal(int)
 
     def __init__(self, devices):
         """Initialization of the measurement QThread.
@@ -419,12 +360,12 @@ class Measure_QT(QObject):
     def meas(self):
         PS_step = np.inf
         VNA_step = np.inf
+        # Iteration on PS, only one if PS is not used.
         while PS_step > 0:
-            # It is necessary to 
             PS_step = self.devices['PS'].meas()
+            self.devices['GM'].meas()
+            # Iteration on VNA if VNA and SM are used together.
             while VNA_step > 0:
                 VNA_step = self.devices['VNA'].meas()
-                for key, value, in self.devices.items():
-                    if key != 'PS' or key != 'VNA':
-                        value.meas()
+                self.devices['SM'].meas()
             
