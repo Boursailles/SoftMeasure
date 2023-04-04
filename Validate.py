@@ -122,11 +122,14 @@ class Valid:
         # Measurement method for the VNA device depends if the SM one is used or not.
         VNA_step = self.devices['vna'].connection(self.devices['sm'].box.isChecked())
         # Measurement method for the SM device depends if the VNA one is used (and hence need its step number) or not.
-        self.devices['sm'](VNA_step)
+        self.devices['sm'].connection(VNA_step)
         
-        for key, value, in self.devices.items():
-            if key != 'sm' or key != 'vna':
-                value.connection()
+        # If the current to apply is considered as to high by the user, it can be stopped.
+        current_to_apply = self.devices['ps'].connection()
+        if current_to_apply != 0:
+            return self.off()
+        
+        self.devices['gm'].connection()
 
     def initialization(self):
         """Initialization to the chosen instrument(s).
@@ -174,8 +177,8 @@ class Valid:
 
         Args:
             exctype (str): Type of the exception raised.
-            value (str): instance of the exception raised.
-            traceback (str): traceback of the exception raised
+            value (str): Instance of the exception raised.
+            traceback (str): Traceback of the exception raised
         """
         # Stop all instruments.
         self.off()
@@ -183,7 +186,7 @@ class Valid:
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Critical)
         msg.setText('An error occured!')
-        msg.setInformativeText('<b>Error type:<b> ' + exctype + '<br><b>Value:<b> ' + value + '<br><b>Traceback:<b> ' + traceback)
+        msg.setInformativeText(f'<span style="color: red;"><b>{exctype}:<b></span> {value}')
         msg.setWindowTitle("Error")
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()

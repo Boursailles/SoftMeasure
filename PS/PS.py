@@ -21,6 +21,8 @@ class SETTINGS:
     def __init__(self):
         """Settings widgets for graphics interface of the PS which are generalized for any brand.
         """
+        # Current considered as high, in amperes.
+        self.I_high = 16
         # File where all parameters in the GUI are saved.
         self.params_path = os.path.join(os.getcwd(), 'PS/parameters.txt')
 
@@ -113,7 +115,13 @@ class COMMANDS:
         """
         path_device = 'PS.'+ self.settings['device'].replace(' ', '_') + '_PS'
         self.instr = importlib.import_module(path_device).PS()
- 
+        
+        # An error is occured if the chosen current is higher than the possible one.
+        assert max(abs(self.settings['I_start']), abs(self.settings['I_stop'])) > self.instr.I_max, f"The supplied current is higher than the maximal one ($I = {self.instr.I_max} A$) supported by the device {self.settings['device']}."
+        
+        # Warning message.
+        self.cooling_circuit_msg()
+
     def initialization(self):
         """PS initialization.
         """
@@ -128,3 +136,14 @@ class COMMANDS:
         """Sets the PS off.
         """
         self.instr.off()
+
+    def cooling_circuit_msg(self):
+        """Warning message for the cooling circuit.
+        """
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setText('Please, be careful!')
+        msg.setInformativeText("Don't forget to start the cooling circuit.")
+        msg.setWindowTitle("Warning")
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()

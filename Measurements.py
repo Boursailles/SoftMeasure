@@ -2,6 +2,7 @@ import numpy as np
 from time import time
 from statistics import mean 
 import os
+from PyQt5.QtWidgets import QMessageBox
 from SM.SM import COMMANDS as SM_COMMANDS, SETTINGS as SM_SETTINGS
 from VNA.VNA import COMMANDS as VNA_COMMANDS, SETTINGS as VNA_SETTINGS
 from PS.PS import COMMANDS as PS_COMMANDS, SETTINGS as PS_SETTINGS
@@ -366,6 +367,33 @@ class PS(PS_SETTINGS, PS_COMMANDS):
         self.step = int(self.settings['nb_step']) 
         # Iteration on the step number of the PS.
         self.idx = 0
+        
+        # If a high current is considered, user chose to continue or not.
+        I_max_applied = self.high_current()
+        return I_max_applied
+    
+    def high_current(self):
+        """Ask to the user to continue if a high current has to be applied.
+
+        Returns:
+            float: Max current to apply.
+        """
+        I_max_applied = max(abs(self.settings['I_start']), abs(self.settings['I_stop']))
+        # If a high current is considered, user chose to continue or not.
+        if I_max_applied > self.I_high:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText('Please, be careful!')
+            msg.setInformativeText(f'The current to be applied (I = {I_max_applied} A) is high, do you want to continue?')
+            msg.setWindowTitle("Warning")
+            msg.setStandardButtons(QMessageBox.Yes|QMessageBox.No)
+            result = msg.exec_()
+            if result == QMessageBox.Yes:
+                return I_max_applied
+            else:
+                return 0
+        else:
+            return 0
               
     def meas(self):
         """Measurement with the initially chosen method.

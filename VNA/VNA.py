@@ -72,9 +72,8 @@ class SETTINGS:
         self.IFBW = QLineEdit()
         self.IFBW.setText(str(self.params['IFBW']))
 
-        self.power = QComboBox()
-        self.power.addItems(['-10', '0', '10'])
-        self.power.setCurrentIndex(int(self.params['power']))
+        self.power = QLineEdit()
+        self.power.setText(str(self.params['power']))
         
 
         layout = QGridLayout()
