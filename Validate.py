@@ -193,7 +193,7 @@ class Valid:
         
         for value in self.devices.values():
             value.off()
-        # Voir quoi faire de ça
+            
         self.okay.setEnabled(True)
         self.emergency.setVisible(False)
 
