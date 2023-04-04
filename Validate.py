@@ -292,28 +292,7 @@ class Valid:
         self.progressbar.setValue(0)
 
     '''
-    def check_current_supplied(self):
-        """
-        Checking the current supplied. If it is higher than the threshold, the current will not be applied. If it is higher than 16 A: Ask if the user want to continue.
-        """
 
-        if self.parent.ps.box.isChecked() and (abs(float(self.parent.ps.I_start.text())) > self.parent.ps.instr.I_max or abs(float(self.parent.ps.I_stop.text())) > self.parent.ps.instr.I_max):
-            QMessageBox.about(self.parent, 'Warning', 'The current limit of the Power Supply is 38 A.')
-            self.kill = True
-            return self.kill
-
-        elif self.parent.ps.box.isChecked() and (abs(float(self.parent.ps.I_start.text())) >= 16 or abs(float(self.parent.ps.I_stop.text())) >= 16):
-            msgbox = QMessageBox()
-            msgbox.setWindowTitle('Warning')
-            msgbox.setText('The applied current of the Power Supply is high, do you want to continue?')
-            msgbox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-
-            return_value = msgbox.exec()
-            if return_value == QMessageBox.No:
-                self.kill = True
-                return self.kill
-        
-        QMessageBox.about(self.parent, 'Warning', 'Do not forget to start the cooling circuit.')
 
 
 class Progressbar_QT(QObject):
