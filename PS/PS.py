@@ -136,6 +136,7 @@ class COMMANDS:
         """Sets the PS off.
         """
         self.instr.off()
+            
 
     def cooling_circuit_msg(self):
         """Warning message for the cooling circuit.

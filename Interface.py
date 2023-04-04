@@ -3,7 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from Measurements import SM, VNA, PS, GM 
-"""from Validate import *"""
+from Validate import *
 
 
 
@@ -56,8 +56,7 @@ class Interface(QWidget):
     def widget_valid(self):
         """Setting tools for the measure.
         """
-        self.valid = Valid(self)
-        self.valid.widget()
+        self.valid = Valid(self.devices)
 
         self.layout.addWidget(self.valid.box, 1, 0)
         self.setLayout(self.layout)
@@ -70,7 +69,7 @@ if __name__ == '__main__':
         app = QApplication(sys.argv)
     
     soft = Interface()
-    """soft.widget_valid()"""
+    soft.widget_valid()
     soft.widget_settings()
     soft.show()
 

@@ -103,7 +103,7 @@ class SETTINGS:
         """Saving of all parameters in order to be used at the next opening.
         """
         header = 'device\tstarting_frequency\tending_frequency\tstep_number\tIFBW\tpower'
-        values = str([str(self.device.currentIndex()), self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.IFBW.text(), str(self.power.currentIndex())])[1: -1].replace(', ', '\t')
+        values = str([str(self.device.currentIndex()), self.f_start.text(), self.f_stop.text(), self.nb_step.text(), self.IFBW.text(), str(self.power.text())])[1: -1].replace(', ', '\t')
         with open(self.params_path, 'w') as f:
             f.write(header + '\n' + str(values)[1: -1].replace("'", ""))
 

@@ -1,4 +1,5 @@
 import os
+import traceback
 import matplotlib.pyplot as plt
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QPushButton
@@ -33,6 +34,7 @@ class Valid:
         self.path = None
         # Error handling.
         sys.excepthook = self.error_handler
+        self.widget()
 
     def widget(self):
         """Display of plot frame widgets.
@@ -74,7 +76,7 @@ class Valid:
         retainsize = self.emergency.sizePolicy()
         retainsize.setRetainSizeWhenHidden(True)
         self.emergency.setSizePolicy(retainsize)
-        self.cancel.clicked.connect(self.off())
+        self.cancel.clicked.connect(self.off)
 
         layout = QGridLayout()
 
@@ -97,7 +99,7 @@ class Valid:
         self.folder()
         self.connection()
         self.initialization()
-        self.meas_record()
+        self.measurement()
 
     def save_params(self):
         """Save last filled QWidget parameters.
@@ -159,21 +161,8 @@ class Valid:
         # Launch measurement and progressbar.
         self.meas_thread.start()
         self.launch_progressbar()
-                
-    def off(self):
-        """Turn off instrument(s).
-        """
-        try:
-            self.meas.finished()
-        except NameError:
-            pass
-        
-        for value in self.devices.values():
-            value.off()
-        # Voir quoi faire de ça
-        self.okay.setEnabled(True)
     
-    def error_handler(self, exctype, value, traceback):
+    def error_handler(self, type, value, traceback_obj):
         """All kind of errors are handled, and call "off" method.
 
         Args:
@@ -187,10 +176,24 @@ class Valid:
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Critical)
         msg.setText('An error occured!')
-        msg.setInformativeText(f'<span style="color: red;"><b>{exctype}:<b></span> {value}')
+        tcb = ''.join(traceback.format_tb(traceback_obj)).replace('\n', '<br>')
+        msg.setInformativeText(f'<span style="color: red;"><b>{type.__name__}:<b></span> {value}<br><br><span style="color: black;"><b>Traceback:<b></span><br>{tcb}')
         msg.setWindowTitle("Error")
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
+        
+    def off(self):
+        """Turn off instrument(s).
+        """
+        try:
+            self.meas.finished()
+        except AttributeError:
+            pass
+        
+        for value in self.devices.values():
+            value.off()
+        # Voir quoi faire de ça
+        self.okay.setEnabled(True)
 
     '''
     def launch_progressbar(self):
@@ -329,7 +332,6 @@ class Progressbar_QT(QObject):
 class Measure_QT(QObject):
     finished = pyqtSignal()
     off = pyqtSignal()
-    msg_error = pyqtSignal(str)
 
     def __init__(self, devices):
         """Initialization of the measurement QThread.
@@ -343,23 +345,201 @@ class Measure_QT(QObject):
     def meas(self):
         PS_step = np.inf
         VNA_step = np.inf
+        
+        measurement_plot = Plot() # Plot window creation.
         # Iteration on PS, only one if PS is not used.
         while PS_step > 0:
-            # Créer une nouvelle trace ici (en utilisant une fonction spéciale, peut-être à appeler à l'instrument)
-            
+            measurement_plot.create_traces() # Creation of trace plots.
             PS_step = self.devices['PS'].meas()
             self.devices['GM'].meas()
             # Iteration on VNA if VNA and SM are used together.
             while VNA_step > 0:
-                # créer une nouvelle trace aussi pour le surface plot
-                
                 VNA_step = self.devices['VNA'].meas()
-                self.devices['SM'].meas()
-                
+                V = self.devices['SM'].meas()
+                self.update_traces(V) # Updates traces plots.
+            self.update_surfaces() # Updates surfaces plots.
+             
     
-def Plot(SM, VNA, PS):
-    # créer un décorateur qui ne fait rieng
+class Plot:
+    def __init__(self, devices):
+        self.devices = devices
+        SM, VNA, PS = devices['SM'].box.isChecked(), devices['VNA'].box.isChecked(), devices['PS'].box.isChecked()
+        
+        # Default functions for traces and surfaces.
+        def CT():
+                pass
+        self.create_traces = CT
+        def UT(SM_value):
+            pass
+        self.update_traces = UT
+        def US():
+            pass
+        self.update_surfaces = US
+        
+        if SM or (VNA and PS):
+            self.create_subplots(SM, VNA, PS)
+            plt.show()
+        
+    def create_subplots(self):
+        # 2D and surface plots for SM and VNA.
+        if SM and VNA and PS:
+            self.create_SM_VNA_PS_plot()
+        # 2D plots for SM and VNA.
+        elif SM and VNA:
+            self.create_SM_VNA_plot()
+        # Surface plot for SM.
+        elif SM and PS:
+            self.create_SM_PS_plot()
+        # Surface plot for VNA.
+        elif VNA and PS:
+            self.create_VNA_PS_plot()
     
-    if SM or (VNA and PS):
-        fig = plt.figure()
-            
+    # Methods to create plots.
+    def create_SM_VNA_PS_plot(self):
+        self.fig, ax = plt.subplots(2, 2, constrained_layout=True)
+        self.I = np.linspace(float(self.devices['PS'].settings['I_start']), float(self.devices['PS'].settings['I_stop']), int(self.devices['PS'].settings['nb_step']))
+        self.f = np.linspace(float(self.devices['VNA'].settings['f_start']), float(self.devices['VNA'].settings['f_stop']), int(self.devices['VNA'].settings['nb_step']))
+        
+        # Initializing surfaces.
+        self.SM_surface_data = np.array([])
+        self.VNA_surface_data = np.array([])
+        
+        # Initialization VNA trace subplot.
+        ax[0, 0].set_xlim(min(self.f), max(self.f))
+        ax[0, 0].set_ylabel('$S_{21}$ [dB]')
+        ax[0, 0].set_xticklabels([])
+        self.VNA_trace, = ax[0, 0].plot([], [])
+        
+        # Initialization SM trace subplot.
+        ax[1, 0].set_xlim(min(self.f), max(self.f))
+        ax[1, 0].set_xlabel('Frequency [GHz]')
+        ax[1, 0].set_ylabel('$V_{iSHE}$ [V]')
+        self.SM_trace, = ax[1, 0].plot([], [])
+        
+        # Initialization VNA surface subplot.
+        ax[0, 1].set_xlim(min(self.I), max(self.I))
+        ax[0, 1].set_ylim(min(self.f), max(self.f))
+        ax[0, 1].set_ylabel('Frequency [GHz]')
+        ax[0, 1].set_xticklabels([])
+        self.VNA_surface = ax[0, 1].plot_surface([], [], [])
+        
+        # Initialization SM surface subplot.
+        ax[1, 1].set_xlim(min(self.I), max(self.I))
+        ax[1, 1].set_ylim(min(self.f), max(self.f))
+        ax[1, 1].set_xlabel('Current [A]')
+        ax[1, 1].set_ylabel('Frequency [GHz]')
+        self.SM_surface = ax[0, 1].plot_surface([], [], [])
+        
+        def CT():
+            self.create_SM_trace()
+            self.create_VNA_trace()
+        self.create_traces = CT
+        
+        def UT(SM_value):
+            self.update_SM_trace(SM_value)
+            self.update_VNA_trace(self.devices['VNA'].instr.S21['Magnitude'][0])
+        self.update_traces = UT
+        
+        def US():
+            self.update_SM_surface(self.SM_surface_data)
+            self.update_VNA_surface(self.VNA_trace_data)
+        self.update_surfaces = US
+
+    def create_SM_VNA_plot(self):
+        self.fig, ax = plt.subplots(2, 1, constrained_layout=True)
+        self.f = np.linspace(float(self.devices['VNA'].settings['f_start']), float(self.devices['VNA'].settings['f_stop']), int(self.devices['VNA'].settings['nb_step']))
+        
+        # Initialization VNA trace subplot.
+        ax[0, 0].set_xlim(min(self.f), max(self.f))
+        ax[0, 0].set_ylabel('$S_{21}$ [dB]')
+        ax[0, 0].set_xticklabels([])
+        self.VNA_trace, = ax[0, 0].plot([], [])
+        
+        # Initialization SM trace subplot.
+        ax[1, 0].set_xlim(min(self.f), max(self.f))
+        ax[1, 0].set_xlabel('Frequency [GHz]')
+        ax[1, 0].set_ylabel('$V_{iSHE}$ [V]')
+        self.SM_trace, = ax[1, 0].plot([], [])
+        
+        def CT():
+            self.create_SM_trace()
+            self.create_VNA_trace()
+        self.create_traces = CT
+        
+        def UT(SM_value):
+            self.update_SM_trace(SM_value)
+            self.update_VNA_trace(self.devices['VNA'].instr.S21['Magnitude'][0])
+        self.update_traces = UT
+
+    def create_SM_PS_plot(self):
+        self.fig, ax = plt.subplots(constrained_layout=True)
+        self.I = np.linspace(float(self.devices['PS'].settings['I_start']), float(self.devices['PS'].settings['I_stop']), int(self.devices['PS'].settings['nb_step']))
+        
+        # Initializing trace.
+        self.SM_trace_data = np.array([])
+        
+        # Initialization SM trace subplot.
+        ax.set_xlim(min(self.f), max(self.f))
+        ax.set_xlabel('Frequency [GHz]')
+        ax.set_ylabel('$V_{iSHE}$ [V]')
+        self.SM_trace, = ax.plot([], [])
+        
+        def UT(SM_value):
+            self.update_SM_trace(SM_value)
+        self.update_traces = UT
+
+    def create_VNA_PS_plot(self):
+        self.fig, ax = plt.subplots(constrained_layout=True)
+        self.I = np.linspace(float(self.devices['PS'].settings['I_start']), float(self.devices['PS'].settings['I_stop']), int(self.devices['PS'].settings['nb_step']))
+        self.f = np.linspace(float(self.devices['VNA'].settings['f_start']), float(self.devices['VNA'].settings['f_stop']), int(self.devices['VNA'].settings['nb_step']))
+        
+        # Initializing surface.
+        self.VNA_surface_data = np.array([])
+        
+        # Initialization VNA surface subplot.
+        ax.set_xlim(min(self.I), max(self.I))
+        ax.set_ylim(min(self.f), max(self.f))
+        ax.set_ylabel('Frequency [GHz]')
+        ax.set_xticklabels([])
+        self.VNA_surface = ax.plot_surface([], [], [])
+        """ax[0, 1].colorbar(cmap='viridis')"""
+        
+        def US():
+            self.update_VNA_surface(self.VNA_trace_data)
+        self.update_surfaces = US
+
+    # Methods to create traces.
+    def create_SM_trace(self):
+        self.SM_trace_data = np.array([])
+        
+    def create_VNA_trace(self):
+        self.VNA_trace_data = np.array([])
+        
+    # Methods to update traces and surfaces.
+    def update_SM_trace(self, SM_value):
+        np.append(self.SM_trace_data, SM_value)
+        self.SM_trace.set_data(self.f(len(self.SM_trace_data)), self.SM_trace_data)
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+        
+    def update_SM_surface(self, SM_trace):
+        np.append(self.SM_surface_data, SM_trace)
+        I, f = np.meshgrid(self.I[len(self.SM_surface_data)], self.f)
+        self.SM_surface.set_data(I, f, self.SM_surface_data)
+        self.SM_surface.changed()
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+        
+    def update_VNA_trace(self, VNA_value):
+        np.append(self.VNA_trace_data, VNA_value)
+        self.VNA_trace.set_data(self.f(len(self.VNA_trace_data)), self.VNA_trace_data)
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+        
+    def update_VNA_surface(self, VNA_trace):
+        np.append(self.VNA_surface_data, VNA_trace)
+        I, f = np.meshgrid(self.I[len(self.VNA_surface_data)], self.f)
+        self.VNA_surface.set_data(I, f, self.VNA_surface_data)
+        self.VNA_surface.changed()
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()

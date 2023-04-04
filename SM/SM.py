@@ -129,7 +129,10 @@ class COMMANDS:
     def off(self):
         """Sets the SM off.
         """
-        self.instr.off()
+        try:
+            self.instr.off()
+        except AttributeError:
+            pass
 
 
 

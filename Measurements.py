@@ -27,6 +27,12 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         """Initialize settings.
         """
         super().__init__()
+        
+        # Obtain method names except __init__ and current method.
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        # Attribute decorator for all methods.
+        for val in methods:
+            setattr(self, val, pass_device(getattr(self, val)))
 
     def file(self, path):
         """Create measurement file
@@ -89,15 +95,13 @@ class SM(SM_SETTINGS, SM_COMMANDS):
                 
         # Clear buffer.
         self.clear_buffer()
-        
         # Averaging.
         V = mean(V_list)
-
         # Delta (error).
         sigma = max(abs(V - V_list))
-        
         # Recording of values.
         getattr(self, self.record_method)(V, sigma)
+        return V
           
     def record_with_VNA(self, V, sigma):
         """Measurement recording if VNA device is used.
@@ -157,6 +161,12 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         """Initialize settings.
         """
         super().__init__()
+        
+        # Obtain method names except __init__ and current method.
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        # Attribute decorator for all methods.
+        for val in methods:
+            setattr(self, val, pass_device(getattr(self, val)))
 
     def file(self, path):
         """Create measurement file.
@@ -325,6 +335,12 @@ class PS(PS_SETTINGS, PS_COMMANDS):
         """
         super().__init__()
         
+        # Obtain method names except __init__ and current method.
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        # Attribute decorator for all methods.
+        for val in methods:
+            setattr(self, val, pass_device(getattr(self, val)))
+        
     def file(self, path):
         """Create measurement file.
 
@@ -426,6 +442,12 @@ class GM(GM_SETTINGS, GM_COMMANDS):
         """Initialize settings.
         """
         super().__init__()
+        
+        # Obtain method names except __init__ and current method.
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        # Attribute decorator for all methods.
+        for val in methods:
+            setattr(self, val, pass_device(getattr(self, val)))
 
     def file(self, path):
         """Create measurement file.
