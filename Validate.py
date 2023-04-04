@@ -160,7 +160,8 @@ class Valid:
 
         # Launch measurement and progressbar.
         self.meas_thread.start()
-        self.launch_progressbar()
+        '''self.launch_progressbar()'''
+        self.emergency.setVisible(True)
     
     def error_handler(self, type, value, traceback_obj):
         """All kind of errors are handled, and call "off" method.
@@ -194,6 +195,7 @@ class Valid:
             value.off()
         # Voir quoi faire de ça
         self.okay.setEnabled(True)
+        self.emergency.setVisible(False)
 
     '''
     def launch_progressbar(self):
