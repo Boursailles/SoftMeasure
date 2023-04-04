@@ -27,12 +27,6 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         """Initialize settings.
         """
         super().__init__()
-        
-        # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
-        # Attribute decorator for all methods.
-        for val in methods:
-            setattr(self, val, pass_device(getattr(self, val)))
 
     def file(self, path):
         """Create measurement file
@@ -55,8 +49,10 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         else:
             decorator = pass_device
         
+        self.box.setEnabled(False)
+        
         # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
         
         # Attribute decorator for all methods.
         for val in methods:
@@ -146,8 +142,12 @@ class SM(SM_SETTINGS, SM_COMMANDS):
     def off(self):
         """Set the device off.
         """
-        super().off()
+        try:
+            super().off()
+        except AttributeError:
+            pass
         self.led.turn_off()
+        self.box.setEnabled(True)
             
 
 class VNA(VNA_SETTINGS, VNA_COMMANDS):
@@ -161,12 +161,6 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         """Initialize settings.
         """
         super().__init__()
-        
-        # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
-        # Attribute decorator for all methods.
-        for val in methods:
-            setattr(self, val, pass_device(getattr(self, val)))
 
     def file(self, path):
         """Create measurement file.
@@ -208,8 +202,10 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         else:
             decorator = pass_device
         
+        self.box.setEnabled(False)
+        
         # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
         
         # Attribute decorator for all methods.
         for val in methods:
@@ -321,6 +317,7 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         """Set the device off.
         """
         self.led.turn_off()
+        self.box.setEnabled(True)
 
 
 class PS(PS_SETTINGS, PS_COMMANDS):
@@ -334,12 +331,6 @@ class PS(PS_SETTINGS, PS_COMMANDS):
         """Initialize settings.
         """
         super().__init__()
-        
-        # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
-        # Attribute decorator for all methods.
-        for val in methods:
-            setattr(self, val, pass_device(getattr(self, val)))
         
     def file(self, path):
         """Create measurement file.
@@ -358,8 +349,10 @@ class PS(PS_SETTINGS, PS_COMMANDS):
         else:
             decorator = pass_device
         
+        self.box.setEnabled(False)
+        
         # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
         
         # Attribute decorator for all methods.
         for val in methods:
@@ -427,8 +420,12 @@ class PS(PS_SETTINGS, PS_COMMANDS):
     def off(self):
         """Set the device off.
         """
-        super().off()
+        try:
+            super().off()
+        except AttributeError:
+            pass
         self.led.turn_off()
+        self.box.setEnabled(True)
 
 
 class GM(GM_SETTINGS, GM_COMMANDS):
@@ -442,12 +439,6 @@ class GM(GM_SETTINGS, GM_COMMANDS):
         """Initialize settings.
         """
         super().__init__()
-        
-        # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
-        # Attribute decorator for all methods.
-        for val in methods:
-            setattr(self, val, pass_device(getattr(self, val)))
 
     def file(self, path):
         """Create measurement file.
@@ -466,8 +457,10 @@ class GM(GM_SETTINGS, GM_COMMANDS):
         else:
             decorator = pass_device
         
+        self.box.setEnabled(False)
+        
         # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file']
+        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
         
         # Attribute decorator for all methods.
         for val in methods:
@@ -498,6 +491,7 @@ class GM(GM_SETTINGS, GM_COMMANDS):
         """Set the device off.
         """
         self.led.turn_off()
+        self.box.setEnabled(True)
 
 
 # Decorators used in device classes.
