@@ -1,4 +1,5 @@
 import os
+import matplotlib.pyplot as plt
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
@@ -350,4 +351,9 @@ class Measure_QT(QObject):
             while VNA_step > 0:
                 VNA_step = self.devices['VNA'].meas()
                 self.devices['SM'].meas()
+                
+    
+def Plot(SM, VNA, PS):
+    if SM or (VNA and PS):
+        fig = plt.figure()
             
