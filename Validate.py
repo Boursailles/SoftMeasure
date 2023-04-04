@@ -345,15 +345,21 @@ class Measure_QT(QObject):
         VNA_step = np.inf
         # Iteration on PS, only one if PS is not used.
         while PS_step > 0:
+            # Créer une nouvelle trace ici (en utilisant une fonction spéciale, peut-être à appeler à l'instrument)
+            
             PS_step = self.devices['PS'].meas()
             self.devices['GM'].meas()
             # Iteration on VNA if VNA and SM are used together.
             while VNA_step > 0:
+                # créer une nouvelle trace aussi pour le surface plot
+                
                 VNA_step = self.devices['VNA'].meas()
                 self.devices['SM'].meas()
                 
     
 def Plot(SM, VNA, PS):
+    # créer un décorateur qui ne fait rieng
+    
     if SM or (VNA and PS):
         fig = plt.figure()
             
