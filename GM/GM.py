@@ -101,7 +101,7 @@ class COMMANDS:
         """
         Connection to the chosen GM (see the linked GM file).
         """
-        path_device = 'GM.'+ self.settings['device'].replace(' ', '_') + '_GM'
+        path_device = 'GM.Devices.'+ self.settings['device'].replace(' ', '_') + '_GM'
         self.instr = importlib.import_module(path_device).GM()
     
     def initialization(self):

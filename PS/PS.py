@@ -113,7 +113,7 @@ class COMMANDS:
     def connection(self):
         """Connection to the chosen PS (see the linked PS file).
         """
-        path_device = 'PS.'+ self.settings['device'].replace(' ', '_') + '_PS'
+        path_device = 'PS.Devices.'+ self.settings['device'].replace(' ', '_') + '_PS'
         self.instr = importlib.import_module(path_device).PS()
         
         # An error is occured if the chosen current is higher than the possible one.

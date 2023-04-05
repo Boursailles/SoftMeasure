@@ -105,14 +105,14 @@ class COMMANDS:
     def connection(self):
         """Connection to the chosen SM (see the linked SM file).
         """
-        path_device = 'SM.'+ self.settings['device'].replace(' ', '_') + '_SM'
+        path_device = 'SM.Devices.'+ self.settings['device'].replace(' ', '_') + '_SM'
         self.instr = importlib.import_module(path_device).SM()
   
     def initialization(self):
         """SM initialization with following parameter (chosen in the interface, see Interface.py):
         self.I: Applied current
         """
-        self.instr.initialization(self.settings['I'])
+        self.instr.initialization(self.settings['current'])
         self.clear_buffer()
 
     def read_val(self):
