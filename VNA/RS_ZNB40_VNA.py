@@ -38,7 +38,7 @@ class VNA:
         self.S22 = None
 
         # Setup PyVISA instrument
-        self.address_vna = 'TCPIP0::ZNB40-72-101845::inst0::INSTR'
+        self.address_vna = 'TCPIP0::169.254.129.24::inst0::INSTR'
 
         self.vna = rm.open_resource(self.address_vna)
         print('Connected to ' + self.vna.query("*IDN?"))

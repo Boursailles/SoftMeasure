@@ -131,11 +131,8 @@ class VNA_settings():
         rm: class
             Ressource Manager
         """
-
         path_device = 'VNA.'+ self.device.currentText().replace(' ', '_') + '_VNA'
-        
         self.instr = importlib.import_module(path_device).VNA(rm)
-
         self.led.turn_on()
 
     
