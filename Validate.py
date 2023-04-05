@@ -189,19 +189,13 @@ class Valid:
         """Turn off instrument(s).
         """
         try:
-            print('oui')
             self.meas.off.emit()
         except AttributeError:
-            print('non')
             pass
-        print('suite')
         for value in self.devices.values():
             value.off()
-        print('lo')
         self.okay.setEnabled(True)
-        print('ici')
         self.emergency.setVisible(False)
-        print('plulo')
 
     '''
     def launch_progressbar(self):
@@ -368,8 +362,8 @@ class Measure_QT(QObject):
                 measurement_plot.update_traces(V) # Updates traces plots.
             measurement_plot.update_surfaces() # Updates surfaces plots.
         self.finished.emit()
-             
-                 
+
+
 class Plot:
     def __init__(self, devices):
         self.devices = devices
