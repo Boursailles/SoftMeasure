@@ -174,7 +174,7 @@ class Valid:
             traceback (str): Traceback of the exception raised
         """
         # Stop all instruments.
-        self.off()
+        '''self.off()
         # Create a message box for the error.
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Critical)
@@ -183,19 +183,32 @@ class Valid:
         msg.setInformativeText(f'<span style="color: red;"><b>{type.__name__}:<b></span> {value}<br><br><span style="color: black;"><b>Traceback:<b></span><br>{tcb}')
         msg.setWindowTitle("Error")
         msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec_()
+        msg.exec_()'''
+        
+        tcb = ''.join(traceback.format_tb(traceback_obj))
+        print(f'{type.__name__}\n{type.__name__}\n{tcb}')
+        tcb = ''.join(traceback.format_tb(traceback_obj))
+        
+        self.off()
+        
         
     def off(self):
         """Turn off instrument(s).
         """
         try:
+            print(1)
             self.meas.off.emit()
         except AttributeError:
+            print(2)
             pass
+        print(3)
         for value in self.devices.values():
             value.off()
+        print(4)
         self.okay.setEnabled(True)
+        print(5)
         self.emergency.setVisible(False)
+        print(6)
 
     '''
     def launch_progressbar(self):
@@ -332,6 +345,7 @@ class Progressbar_QT(QObject):
 
 
 class Measure_QT(QObject):
+    signal_exception = pyqtSignal(type, value, traceback_obj)
     finished = pyqtSignal()
     off = pyqtSignal()
 
