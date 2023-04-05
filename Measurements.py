@@ -2,6 +2,7 @@ import numpy as np
 from time import time
 from statistics import mean 
 import os
+import functools
 from PyQt5.QtWidgets import QMessageBox
 from SM.SM import COMMANDS as SM_COMMANDS, SETTINGS as SM_SETTINGS
 from VNA.VNA import COMMANDS as VNA_COMMANDS, SETTINGS as VNA_SETTINGS
@@ -36,6 +37,7 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         """
         if self.box.isChecked():
             self.path = path
+            self.settings = {'device': str(self.device.currentIndex()), 'current': self.I.text(), 'measurement_period': self.meas_time.text()}
             
             # Creating iSHE voltage file.
             with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'w') as f:
@@ -63,7 +65,6 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         """
         # New parameters are saved.
         self.save_params()
-        self.settings = {'device': str(self.device.currentIndex()), 'current': self.I.text(), 'measurement_period': self.meas_time.text()}
         
         # Connection to the device.
         SM_COMMANDS.__init__(self, self.settings)
@@ -170,10 +171,11 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         """
         if self.box.isChecked():
             self.path = path
+            self.settings = {'device': str(self.device.currentIndex()), 'f_start': self.f_start.text(), 'f_stop': self.f_stop.text(), 'nb_step': self.nb_step.text(), 'IFBW': self.IFBW.text(), 'power': str(self.power.text())}
 
             # Creating frequency file with values.
             self.freq_list = np.linspace(float(self.settings['f_start']), float(self.settings['f_stop']), int(self.settings['nb_step']))
-            np.savetxt(os.path.join(self.path, 'f_values.txt'), self.freq_list, header='Frequency [GHz]', comments='')
+            np.savetxt(self.path + '/f_values.txt', self.freq_list, header='Frequency [GHz]', comments='')
             
             # Creating S folder if it does not exist.
             self.s_path = os.path.join(self.path, 'S')
@@ -219,8 +221,6 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         """
         # New parameters are saved.
         self.save_params()
-        self.settings = {'device': str(self.device.currentIndex()), 'f_start': self.f_start.text(), 'f_stop': self.f_stop.text(), 'nb_step': self.nb_step.text(), 'IFBW': self.IFBW.text(), 'power': str(self.power.currentIndex())}
-        
         # Connection to the device.
         VNA_COMMANDS.__init__(self, self.settings)
         super().connection()
@@ -236,7 +236,7 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
             
         # Step number of the VNA.
         self.step = int(self.settings['nb_step'])
-        return self.step                        
+        return self.step                  
                     
     def meas(self):
         """Measurement with the initially chosen method (with or without SM).
@@ -340,6 +340,7 @@ class PS(PS_SETTINGS, PS_COMMANDS):
         """
         if self.box.isChecked():
             self.path = path
+            self.settings = {'device': str(self.device.currentIndex()), 'I_start': self.I_start.text(), 'I_stop': self.I_stop.text(), 'nb_step': self.nb_step.text()}
             
             # Creating current file.
             with open(os.path.join(self.path, 'I_values.txt'), 'w') as f:
@@ -363,7 +364,6 @@ class PS(PS_SETTINGS, PS_COMMANDS):
         """
         # New parameters are saved.
         self.save_params()
-        self.settings = {'device': str(self.device.currentIndex()), 'I_start': self.I_start.text(), 'I_stop': self.I_stop.text(), 'nb_step': self.nb_step.text()}
         
         # Connection to the device.
         PS_COMMANDS.__init__(self, self.settings)
@@ -446,15 +446,17 @@ class GM(GM_SETTINGS, GM_COMMANDS):
         Args:
             path (str): Directory path for recording files.
         """
-        if self.box.isChecked:
+        if self.box.isChecked():
             self.path = path
+            self.settings = {'device': str(self.device.currentIndex()), 'unit': str(self.unit.currentIndex())}
             
             # Creating magnetic field file.
             with open(os.path.join(self.path, 'H_values.txt'), 'w') as f:
                 f.write('Magnetic Field [' + self.settings['unit'] + ']\n')
-        
+                
             decorator = active_device
         else:
+            
             decorator = pass_device
         
         self.box.setEnabled(False)
@@ -471,7 +473,6 @@ class GM(GM_SETTINGS, GM_COMMANDS):
         """
         # New parameters are saved.
         self.save_params()
-        self.settings = {'device': str(self.device.currentIndex()), 'unit': str(self.unit.currentIndex())}
         
         # Connection to the device.
         GM_COMMANDS.__init__(self, self.settings)
@@ -501,7 +502,8 @@ def pass_device(method):
     Args:
         method (method): Method not used.
     """
-    def wrapped():
+    @functools.wraps(method)
+    def wrapped(*args, **kwargs):
         return 0
     return wrapped
 
@@ -511,6 +513,7 @@ def active_device(method):
     Args:
         method (method): Method used.
     """
-    def wrapped():
-        method()
+    @functools.wraps(method)
+    def wrapped(*args, **kwargs):
+        method(*args, **kwargs)
     return wrapped

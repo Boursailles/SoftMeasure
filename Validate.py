@@ -1,4 +1,5 @@
 import os
+import sys
 import traceback
 import matplotlib.pyplot as plt
 from PyQt5.QtCore import *
@@ -11,7 +12,6 @@ import math
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
 from Save import *
-from Interface import *
 
 
 
@@ -112,18 +112,19 @@ class Valid:
         """
         # Creating parent folder.
         try:
-            for value in self.devices.values():
-                value.file()
-        # A modifier, à mettre dans la gestion générale des erreurs qui déconnectera les machines.
-        except FileNotFoundError as e:
-            QMessageBox.about(self.parent, 'Warning', e)
-            return
+            os.makedirs(self.path)
+        except FileExistsError:
+            pass
+        # reating subfiles and/or subfolders.
+        for value in self.devices.values():
+            value.file(self.path)
 
     def connection(self):
         """Connection to the chosen instrument(s).
         """
+        sm_connected = self.devices['sm'].box.isChecked()
         # Measurement method for the VNA device depends if the SM one is used or not.
-        VNA_step = self.devices['vna'].connection(self.devices['sm'].box.isChecked())
+        VNA_step = self.devices['vna'].connection(sm_connected)
         # Measurement method for the SM device depends if the VNA one is used (and hence need its step number) or not.
         self.devices['sm'].connection(VNA_step)
         
