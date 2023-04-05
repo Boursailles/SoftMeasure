@@ -76,6 +76,7 @@ class Valid:
         retainsize = self.emergency.sizePolicy()
         retainsize.setRetainSizeWhenHidden(True)
         self.emergency.setSizePolicy(retainsize)
+        self.emergency.clicked.connect(self.emergency_stop)
 
         layout = QGridLayout()
 
@@ -159,7 +160,6 @@ class Valid:
         self.meas.off.connect(self.meas_thread.exit)
         self.meas.finished.connect(self.off)
         self.meas.signal_exception.connect(self.error_handler)
-        self.emergency.clicked.connect(self.meas.emergency_stop)
 
         # Launch measurement and progressbar.
         self.meas_thread.start()
@@ -203,6 +203,11 @@ class Valid:
             value.off()
         self.okay.setEnabled(True)
         self.emergency.setVisible(False)
+
+    def emergency_stop(self):
+        """Stop measurement.
+        """
+        self.meas.emergency_clicked = True
 
     '''
     def launch_progressbar(self):
@@ -379,10 +384,6 @@ class Measure_QT(QObject):
         except Exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self.signal_exception.emit(exc_type, exc_value, exc_traceback)
-    
-    def emergency_stop(self):
-        print('c clické')
-        self.emergency_clicked = True
 
 
 class Plot:
