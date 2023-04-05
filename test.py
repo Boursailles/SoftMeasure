@@ -61,7 +61,7 @@ class Plot_GUI(QWidget):
         self.S_plot.graph.axes.autoscale_view()
         self.S_plot.graph.draw()
 
-    def read_Vdata(self, idx):
+    def read_Vdata(self):
         ydata = np.random.rand(len(self.xdata))
         Dydata = np.random.rand(len(self.xdata))
         self.update_errorbar(self.V_trace, self.xdata, ydata, None, Dydata)
@@ -195,9 +195,15 @@ if __name__ == '__main__':
     win = QWidget()
     plot_gui = Plot_GUI()
     plot_gui.S_curve()
+    plot_gui.V_curve()
     
-    for i in range(10):
-        Timer(1, plot_gui.read_Sdata()).start()
+    timer = QTimer()
+    timer.timeout.connect(lambda: plot_gui.read_Sdata())
+    timer.start(1)
+    
+    timer2 = QTimer()
+    timer2.timeout.connect(lambda: plot_gui.read_Vdata())
+    timer2.start(1) 
 
 
     sys.exit(app.exec_())
