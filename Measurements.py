@@ -81,13 +81,13 @@ class SM(SM_SETTINGS, SM_COMMANDS):
     def meas(self):
         """One measurement set with SM.
         """
-        V_list = []
+        V_list = np.array([])
         start = now = time()
-
+        measurement_period = float(self.settings['measurement_period'])
         # Set of SM measurement while a given time.
-        while now - start < self.settings['time']:
+        while now - start < measurement_period:
             V = self.read_val()
-            V_list.append(V)
+            V_list = np.append(V_list, V)
             now = time()
                 
         # Clear buffer.
@@ -252,7 +252,7 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         """
         freq = self.freq_list[self.idx]
         
-        self.meas_settings('2', freq, freq + 1e-9)
+        self.meas_settings('2', str(freq), str(freq + 1e-9))
         self.read_s_param()
         
         for s in self.sij:

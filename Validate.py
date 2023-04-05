@@ -76,7 +76,6 @@ class Valid:
         retainsize = self.emergency.sizePolicy()
         retainsize.setRetainSizeWhenHidden(True)
         self.emergency.setSizePolicy(retainsize)
-        self.cancel.clicked.connect(self.off)
 
         layout = QGridLayout()
 
@@ -160,6 +159,7 @@ class Valid:
         self.meas.off.connect(self.meas_thread.exit)
         self.meas.finished.connect(self.off)
         self.meas.signal_exception.connect(self.error_handler)
+        self.emergency.clicked.connect(self.meas.emergency_stop)
 
         # Launch measurement and progressbar.
         self.meas_thread.start()
@@ -175,7 +175,7 @@ class Valid:
             traceback (str): Traceback of the exception raised
         """
         # Stop all instruments.
-        '''self.off()
+        self.off()
         # Create a message box for the error.
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Critical)
@@ -184,31 +184,25 @@ class Valid:
         msg.setInformativeText(f'<span style="color: red;"><b>{type.__name__}:<b></span> {value}<br><br><span style="color: black;"><b>Traceback:<b></span><br>{tcb}')
         msg.setWindowTitle("Error")
         msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec_()'''
+        msg.exec_()
         
-        tcb = ''.join(traceback.format_tb(traceback_obj))
+        """tcb = ''.join(traceback.format_tb(traceback_obj))
         print(f'{type.__name__}\n{type.__name__}\n{tcb}')
         tcb = ''.join(traceback.format_tb(traceback_obj))
         
-        self.off()
+        self.off()"""
                
     def off(self):
         """Turn off instrument(s).
         """
         try:
-            print(1)
             self.meas.off.emit()
         except AttributeError:
-            print(2)
             pass
-        print(3)
         for value in self.devices.values():
             value.off()
-        print(4)
         self.okay.setEnabled(True)
-        print(5)
         self.emergency.setVisible(False)
-        print(6)
 
     '''
     def launch_progressbar(self):
@@ -345,7 +339,7 @@ class Progressbar_QT(QObject):
 
 
 class Measure_QT(QObject):
-    signal_exception = pyqtSignal()
+    signal_exception = pyqtSignal(object, object, object)
     finished = pyqtSignal()
     off = pyqtSignal()
 
@@ -357,29 +351,38 @@ class Measure_QT(QObject):
         """
         super().__init__()
         self.devices = devices
+        self.emergency_clicked = False
 
     def meas(self):
         try:
             PS_step = np.inf
             VNA_step = np.inf
             
-            measurement_plot = Plot(self.devices) # Plot window creation.
+            '''measurement_plot = Plot(self.devices) # Plot window creation.'''
             # Iteration on PS, only one if PS is not used.
             while PS_step > 0:
-                measurement_plot.create_traces() # Creation of trace plots.
+                '''measurement_plot.create_traces() # Creation of trace plots.'''
                 PS_step = self.devices['ps'].meas()
                 self.devices['gm'].meas()
                 # Iteration on VNA if VNA and SM are used together.
                 while VNA_step > 0:
                     VNA_step = self.devices['vna'].meas()
-                    print(VNA_step)
                     V = self.devices['sm'].meas()
-                    measurement_plot.update_traces(V) # Updates traces plots.
-                measurement_plot.update_surfaces() # Updates surfaces plots.
-        except Exception as e:
+                    print(self.emergency_clicked)
+                    if self.emergency_clicked:
+                        print('stop')
+                        self.finished.emit()
+                        break
+                    '''measurement_plot.update_traces(V) # Updates traces plots.'''
+                '''measurement_plot.update_surfaces() # Updates surfaces plots.'''
+            self.finished.emit()
+        except Exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self.signal_exception.emit(exc_type, exc_value, exc_traceback)
-        self.finished.emit()
+    
+    def emergency_stop(self):
+        print('c clické')
+        self.emergency_clicked = True
 
 
 class Plot:
@@ -399,7 +402,7 @@ class Plot:
             pass
         self.update_surfaces = US
         
-        if self.SM or (self.VNA and self.PS):
+        if (self.SM and self.VNA) or (self.SM and self.PS) or (self.VNA and self.PS):
             self.create_subplots(self.SM, self.VNA, self.PS)
             plt.show()
         
