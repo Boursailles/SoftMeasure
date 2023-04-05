@@ -159,6 +159,7 @@ class Valid:
         self.meas_thread.started.connect(self.meas.meas)
         self.meas.off.connect(self.meas_thread.exit)
         self.meas.finished.connect(self.off)
+        self.meas.signal_exception.connect(self.error_handler)
 
         # Launch measurement and progressbar.
         self.meas_thread.start()
@@ -190,8 +191,7 @@ class Valid:
         tcb = ''.join(traceback.format_tb(traceback_obj))
         
         self.off()
-        
-        
+               
     def off(self):
         """Turn off instrument(s).
         """
@@ -345,7 +345,7 @@ class Progressbar_QT(QObject):
 
 
 class Measure_QT(QObject):
-    signal_exception = pyqtSignal(type, value, traceback_obj)
+    signal_exception = pyqtSignal()
     finished = pyqtSignal()
     off = pyqtSignal()
 
@@ -359,22 +359,26 @@ class Measure_QT(QObject):
         self.devices = devices
 
     def meas(self):
-        PS_step = np.inf
-        VNA_step = np.inf
-        
-        measurement_plot = Plot(self.devices) # Plot window creation.
-        # Iteration on PS, only one if PS is not used.
-        while PS_step > 0:
-            measurement_plot.create_traces() # Creation of trace plots.
-            PS_step = self.devices['ps'].meas()
-            self.devices['gm'].meas()
-            # Iteration on VNA if VNA and SM are used together.
-            while VNA_step > 0:
-                VNA_step = self.devices['vna'].meas()
-                print(VNA_step)
-                V = self.devices['sm'].meas()
-                measurement_plot.update_traces(V) # Updates traces plots.
-            measurement_plot.update_surfaces() # Updates surfaces plots.
+        try:
+            PS_step = np.inf
+            VNA_step = np.inf
+            
+            measurement_plot = Plot(self.devices) # Plot window creation.
+            # Iteration on PS, only one if PS is not used.
+            while PS_step > 0:
+                measurement_plot.create_traces() # Creation of trace plots.
+                PS_step = self.devices['ps'].meas()
+                self.devices['gm'].meas()
+                # Iteration on VNA if VNA and SM are used together.
+                while VNA_step > 0:
+                    VNA_step = self.devices['vna'].meas()
+                    print(VNA_step)
+                    V = self.devices['sm'].meas()
+                    measurement_plot.update_traces(V) # Updates traces plots.
+                measurement_plot.update_surfaces() # Updates surfaces plots.
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            self.signal_exception.emit(exc_type, exc_value, exc_traceback)
         self.finished.emit()
 
 
