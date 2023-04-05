@@ -157,7 +157,8 @@ class Valid:
         self.meas_thread = QThread()
         self.meas.moveToThread(self.meas_thread)
         self.meas_thread.started.connect(self.meas.meas)
-        self.meas.finished.connect(self.meas_thread.exit)
+        self.meas.off.connect(self.meas_thread.exit)
+        self.meas.finished.connect(self.off)
 
         # Launch measurement and progressbar.
         self.meas_thread.start()
@@ -188,15 +189,19 @@ class Valid:
         """Turn off instrument(s).
         """
         try:
-            self.meas.finished()
+            print('oui')
+            self.meas.off.emit()
         except AttributeError:
+            print('non')
             pass
-        
+        print('suite')
         for value in self.devices.values():
             value.off()
-            
+        print('lo')
         self.okay.setEnabled(True)
+        print('ici')
         self.emergency.setVisible(False)
+        print('plulo')
 
     '''
     def launch_progressbar(self):
@@ -349,25 +354,28 @@ class Measure_QT(QObject):
         PS_step = np.inf
         VNA_step = np.inf
         
-        measurement_plot = Plot() # Plot window creation.
+        measurement_plot = Plot(self.devices) # Plot window creation.
         # Iteration on PS, only one if PS is not used.
         while PS_step > 0:
             measurement_plot.create_traces() # Creation of trace plots.
-            PS_step = self.devices['PS'].meas()
-            self.devices['GM'].meas()
+            PS_step = self.devices['ps'].meas()
+            self.devices['gm'].meas()
             # Iteration on VNA if VNA and SM are used together.
             while VNA_step > 0:
-                VNA_step = self.devices['VNA'].meas()
-                V = self.devices['SM'].meas()
-                self.update_traces(V) # Updates traces plots.
-            self.update_surfaces() # Updates surfaces plots.
+                VNA_step = self.devices['vna'].meas()
+                print(VNA_step)
+                V = self.devices['sm'].meas()
+                measurement_plot.update_traces(V) # Updates traces plots.
+            measurement_plot.update_surfaces() # Updates surfaces plots.
+        self.finished.emit()
              
-    
+                 
 class Plot:
     def __init__(self, devices):
         self.devices = devices
-        SM, VNA, PS = devices['SM'].box.isChecked(), devices['VNA'].box.isChecked(), devices['PS'].box.isChecked()
-        
+        self.SM = devices['sm'].box.isChecked()
+        self.VNA = devices['vna'].box.isChecked()
+        self.PS = devices['ps'].box.isChecked()
         # Default functions for traces and surfaces.
         def CT():
                 pass
@@ -379,22 +387,22 @@ class Plot:
             pass
         self.update_surfaces = US
         
-        if SM or (VNA and PS):
-            self.create_subplots(SM, VNA, PS)
+        if self.SM or (self.VNA and self.PS):
+            self.create_subplots(self.SM, self.VNA, self.PS)
             plt.show()
         
     def create_subplots(self):
         # 2D and surface plots for SM and VNA.
-        if SM and VNA and PS:
+        if self.SM and self.VNA and self.PS:
             self.create_SM_VNA_PS_plot()
         # 2D plots for SM and VNA.
-        elif SM and VNA:
+        elif self.SM and self.VNA:
             self.create_SM_VNA_plot()
         # Surface plot for SM.
-        elif SM and PS:
+        elif self.SM and self.PS:
             self.create_SM_PS_plot()
         # Surface plot for VNA.
-        elif VNA and PS:
+        elif self.VNA and self.PS:
             self.create_VNA_PS_plot()
     
     # Methods to create plots.

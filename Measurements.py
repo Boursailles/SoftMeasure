@@ -37,7 +37,7 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         """
         if self.box.isChecked():
             self.path = path
-            self.settings = {'device': str(self.device.currentIndex()), 'current': self.I.text(), 'measurement_period': self.meas_time.text()}
+            self.settings = {'device': str(self.device.currentText()), 'current': self.I.text(), 'measurement_period': self.meas_time.text()}
             
             # Creating iSHE voltage file.
             with open(os.path.join(self.path, 'V-iSHE_values.txt'), 'w') as f:
@@ -171,7 +171,7 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         """
         if self.box.isChecked():
             self.path = path
-            self.settings = {'device': str(self.device.currentIndex()), 'f_start': self.f_start.text(), 'f_stop': self.f_stop.text(), 'nb_step': self.nb_step.text(), 'IFBW': self.IFBW.text(), 'power': str(self.power.text())}
+            self.settings = {'device': str(self.device.currentText()), 'f_start': self.f_start.text(), 'f_stop': self.f_stop.text(), 'nb_step': self.nb_step.text(), 'IFBW': self.IFBW.text(), 'power': str(self.power.text())}
 
             # Creating frequency file with values.
             self.freq_list = np.linspace(float(self.settings['f_start']), float(self.settings['f_stop']), int(self.settings['nb_step']))
@@ -270,7 +270,7 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
             
             # Recording of the phase value.
             with open(os.path.join(path, 'Phase.txt'), 'a') as f:
-                s_list = getattr(self.parent.vna.instr, s)['Phase']
+                s_list = getattr(self.instr, s)['Phase']
                 f.write(str(s_list[0]))
                 
                 if self.idx < self.step - 1:
@@ -283,8 +283,7 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
     def meas_without_SM(self):
         """Measurement with VNA on a frequency sweep.
         """
-        self.read_s_param()
-        
+        self.read_s_param()    
         for s in self.sij:
             path = os.path.join(self.s_path, s)
             
@@ -302,7 +301,7 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
             
             # Recording of the phase value.
             with open(os.path.join(path, 'Phase.txt'), 'a') as f:
-                s_list = getattr(self.parent.vna.instr, s)['Phase']
+                s_list = getattr(self.instr, s)['Phase']
                 f.write(str(s_list[0]))
                 
                 for i, val in enumerate(s_list):
@@ -340,7 +339,7 @@ class PS(PS_SETTINGS, PS_COMMANDS):
         """
         if self.box.isChecked():
             self.path = path
-            self.settings = {'device': str(self.device.currentIndex()), 'I_start': self.I_start.text(), 'I_stop': self.I_stop.text(), 'nb_step': self.nb_step.text()}
+            self.settings = {'device': str(self.device.currentText()), 'I_start': self.I_start.text(), 'I_stop': self.I_stop.text(), 'nb_step': self.nb_step.text()}
             
             # Creating current file.
             with open(os.path.join(self.path, 'I_values.txt'), 'w') as f:
@@ -448,7 +447,7 @@ class GM(GM_SETTINGS, GM_COMMANDS):
         """
         if self.box.isChecked():
             self.path = path
-            self.settings = {'device': str(self.device.currentIndex()), 'unit': str(self.unit.currentIndex())}
+            self.settings = {'device': str(self.device.currentText()), 'unit': str(self.unit.currentIndex())}
             
             # Creating magnetic field file.
             with open(os.path.join(self.path, 'H_values.txt'), 'w') as f:
@@ -515,5 +514,5 @@ def active_device(method):
     """
     @functools.wraps(method)
     def wrapped(*args, **kwargs):
-        method(*args, **kwargs)
+        return method(*args, **kwargs)
     return wrapped

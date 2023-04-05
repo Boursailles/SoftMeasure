@@ -122,7 +122,7 @@ class COMMANDS:
     def connection(self):
         """Connection to the chosen VNA (see the linked VNA file).
         """
-        path_device = 'VNA.'+ self.settings['device'].replace(' ', '_') + '_VNA'
+        path_device = 'VNA.Devices.'+ self.settings['device'].replace(' ', '_') + '_VNA'
         self.instr = importlib.import_module(path_device).VNA()
  
     def initialization(self):
