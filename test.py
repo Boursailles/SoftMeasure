@@ -13,11 +13,64 @@ from matplotlib.figure import Figure
 import random
 
 
+import sys
+from PyQt5.QtCore import * 
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from Measurements import SM, VNA, PS, GM 
+from Validate import *
+
+
 
 ###############################################################################
-# This program is working with Interface.py and Validate.py files as parents for SoftMeasure.
-# It contains useful code allowing to display measurement in live.
+# It contains useful code allowing to display main window for SoftMeasure program.
 ###############################################################################
+
+
+
+class Interface(QWidget):
+    """Main interface GUI.
+
+    Args:
+        QWidget (class): Widget for GUI interface.
+    """
+    def __init__(self):
+        """Main window of SoftMeasure.
+        """
+        # Main graphic window
+        super().__init__()
+        self.setWindowTitle('SoftMeasure')
+        self.layout = QGridLayout()
+        self.widget_valid()
+        self.plot()
+        
+    def widget_valid(self):
+        """Setting tools for the measure.
+        """
+        self.okay = QPushButton('Okay')
+        self.okay.clicked.connect(self.okay_action)
+
+        self.layout.addWidget(self.okay, 0, 0)
+        self.setLayout(self.layout)
+    
+    def okay_action(self):
+        print('clicked')
+
+    def plot(self):
+        plot_gui = Plot_GUI()
+        plot_gui.S_curve()
+        plot_gui.V_curve()
+        plot_gui.show()
+        
+        timer = QTimer()
+        timer.timeout.connect(lambda: plot_gui.read_Sdata())
+        timer.start(1000)
+        
+        timer2 = QTimer()
+        timer2.timeout.connect(lambda: plot_gui.read_Vdata())
+        timer2.start(1000) 
+
+
 
 
 
@@ -190,20 +243,12 @@ class Graph_2D(QWidget):
         self.setLayout(layout)
 
 
+
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    win = QWidget()
-    plot_gui = Plot_GUI()
-    plot_gui.S_curve()
-    plot_gui.V_curve()
-    
-    timer = QTimer()
-    timer.timeout.connect(lambda: plot_gui.read_Sdata())
-    timer.start(1)
-    
-    timer2 = QTimer()
-    timer2.timeout.connect(lambda: plot_gui.read_Vdata())
-    timer2.start(1) 
-
-
+    app = QApplication.instance() 
+    if not app:
+        app = QApplication(sys.argv)
+    soft = Interface()
+    soft.show()
     sys.exit(app.exec_())
+    

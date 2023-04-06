@@ -163,6 +163,12 @@ class Valid:
         self.meas.off.connect(self.meas_thread.exit)
         self.meas.finished.connect(self.off)
         self.meas.signal_exception.connect(self.error_handler)
+        
+        # Plot GUI and signals for plots.
+        self.measurement_plot = Plot(self.devices) # Plot window creation.
+        self.meas.create_traces.connect(self.measurement_plot.create_traces)
+        self.meas.update_traces.connect(self.measurement_plot.update_traces)
+        self.meas.update_surfaces.connect(self.measurement_plot.update_surfaces)
 
         # Launch measurement and progressbar.
         self.meas_thread.start()
@@ -348,6 +354,10 @@ class Measure_QT(QObject):
     signal_exception = pyqtSignal(object, object, object)
     finished = pyqtSignal()
     off = pyqtSignal()
+    measurement_plot = pyqtSignal(dict)
+    create_traces = pyqtSignal()
+    update_traces = pyqtSignal(float)
+    update_surfaces = pyqtSignal()
 
     def __init__(self, devices):
         """Initialization of the measurement QThread.
@@ -363,11 +373,10 @@ class Measure_QT(QObject):
         try:
             PS_step = np.inf
             VNA_step = np.inf
-
-            measurement_plot = Plot(self.devices) # Plot window creation.
+            
             # Iteration on PS, only one if PS is not used.
             while PS_step > 0:
-                measurement_plot.create_traces() # Creation of trace plots.
+                self.create_traces.emit() # Creation of trace plots.
                 PS_step = self.devices['ps'].meas()
                 self.devices['gm'].meas()
                 # Iteration on VNA if VNA and SM are used together.
@@ -378,16 +387,18 @@ class Measure_QT(QObject):
                     if self.emergency_clicked:
                         self.finished.emit()
                         break
-                    measurement_plot.update_traces(V) # Updates traces plots.
-                measurement_plot.update_surfaces() # Updates surfaces plots.
+                    self.update_traces.emit(V) # Updates traces plots.
+                self.update_surfaces.emit() # Updates surfaces plots.
             self.finished.emit()
         except Exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self.signal_exception.emit(exc_type, exc_value, exc_traceback)
 
 
-class Plot:
+class Plot(QWidget):
     def __init__(self, devices):
+        super().__init__()
+        self.setWindowTitle('SoftMeasure')
         self.devices = devices
         SM = devices['sm'].box.isChecked()
         VNA = devices['vna'].box.isChecked()
@@ -408,25 +419,14 @@ class Plot:
 
         if (SM and VNA) or (SM and PS) or (VNA and PS):
             self.create_subplots(SM, VNA, PS)
-            plt.ion()
             # Créer l'application et la fenêtre
-            self.app = QApplication(sys.argv)
-            self.win = QMainWindow()
-            widget = QWidget()
             layout = QVBoxLayout()
-            widget.setLayout(layout)
-            self.win.setCentralWidget(widget)
-
+            self.setLayout(layout)
             # Ajouter le graphique dans la fenêtre
             canvas = FigureCanvas(self.fig)
             layout.addWidget(canvas)
-
             # Afficher la fenêtre
-            self.win.show()
-
-            # Lancer la boucle d'événements de l'application
-            self.app.exec_()
-            
+            self.show()
 
     def create_subplots(self, SM, VNA, PS):
         # 2D and surface plots for SM and VNA.
