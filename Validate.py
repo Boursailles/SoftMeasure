@@ -149,13 +149,7 @@ class Valid:
         """
         # Measurement class.
         self.meas = Measure_QT(self.devices)
-
-        """
-        # Connecting signals of the measurement class.
-        self.meas.msg_error.connect(self.msg_error)
-        self.meas.off.connect(self.off)
-        self.emergency.clicked.connect(self.meas.bool_switch)"""
-
+        
         # Creating measurement QThread.
         self.meas_thread = QThread()
         self.meas.moveToThread(self.meas_thread)
@@ -351,10 +345,16 @@ class Progressbar_QT(QObject):
 
 
 class Measure_QT(QObject):
-    signal_exception = pyqtSignal(object, object, object)
-    finished = pyqtSignal()
-    off = pyqtSignal()
-    measurement_plot = pyqtSignal(dict)
+    """QThread for measurement.
+
+    Args:
+        QObject (object): Object from PyQT5.
+    """
+    # Functionnalities signals.
+    signal_exception = pyqtSignal(object, object, object) # If an exception occur, it'll be sent and managed by the main thread.
+    finished = pyqtSignal() # Warns when measurement is finished.
+    off = pyqtSignal() # Break the current thread.
+    # Plot signals.
     create_traces = pyqtSignal()
     update_traces = pyqtSignal(float)
     update_surfaces = pyqtSignal()
@@ -367,10 +367,13 @@ class Measure_QT(QObject):
         """
         super().__init__()
         self.devices = devices
-        self.emergency_clicked = False
+        self.emergency_clicked = False # Initialization of the emergency button. If True: stop the measurement. Default to False.
 
     def meas(self):
+        """Measurement management.
+        """
         try:
+            # Initialize step number for PS and VNA devices.
             PS_step = np.inf
             VNA_step = np.inf
             
@@ -381,13 +384,13 @@ class Measure_QT(QObject):
                 self.devices['gm'].meas()
                 # Iteration on VNA if VNA and SM are used together.
                 while VNA_step > 0:
-                    print(VNA_step)
                     VNA_step = self.devices['vna'].meas()
                     V = self.devices['sm'].meas()
+                    self.update_traces.emit(V) # Updates traces plots.
+                    # For each iteration, check if the emergency button was clicked, if yes, the measurement is stopped.
                     if self.emergency_clicked:
                         self.finished.emit()
                         break
-                    self.update_traces.emit(V) # Updates traces plots.
                 self.update_surfaces.emit() # Updates surfaces plots.
             self.finished.emit()
         except Exception:
