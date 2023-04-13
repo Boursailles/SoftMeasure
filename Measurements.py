@@ -27,6 +27,8 @@ class SM(SM_SETTINGS, SM_COMMANDS):
     def __init__(self):
         """Initialize settings.
         """
+        # Obtain method names except __init__ and current method.
+        self.method_names = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
         super().__init__()
 
     def file(self, path):
@@ -57,8 +59,8 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
         
         # Attribute decorator for all methods.
-        for val in methods:
-            setattr(self, val, decorator(getattr(self, val)))
+        for val in self.original_methods:
+            setattr(self, val, decorator(val))
  
     def connection(self, VNA=0):
         """Connection to the device.
@@ -500,6 +502,7 @@ def pass_device(method):
     """
     @functools.wraps(method)
     def wrapped(*args, **kwargs):
+        print('nikey')
         return 0
     return wrapped
 
