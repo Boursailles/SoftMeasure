@@ -382,8 +382,8 @@ class Measure_QT(QObject):
             while PS_step > 0:
                 # Initialize step number VNA device.
                 VNA_step = np.inf
-                self.devices['vna'].initialize_step()
-                self.devices['sm'].initialize_step()
+                self.devices['vna'].initialize_steps()
+                self.devices['sm'].initialize_steps()
                 
                 self.create_traces.emit() # Creation of trace plots.
                 PS_step = self.devices['ps'].meas()
