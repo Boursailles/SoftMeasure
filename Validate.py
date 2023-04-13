@@ -374,12 +374,17 @@ class Measure_QT(QObject):
         """Measurement management.
         """
         try:
-            # Initialize step number for PS and VNA devices.
+            # Initialize step number for PS device.
             PS_step = np.inf
-            VNA_step = np.inf
+            
             
             # Iteration on PS, only one if PS is not used.
             while PS_step > 0:
+                # Initialize step number VNA device.
+                VNA_step = np.inf
+                self.devices['vna'].initialize_step()
+                self.devices['sm'].initialize_step()
+                
                 self.create_traces.emit() # Creation of trace plots.
                 PS_step = self.devices['ps'].meas()
                 self.devices['gm'].meas()

@@ -72,7 +72,6 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         if VNA != 0:
             self.record_method = 'record_with_VNA'
             self.step = VNA
-            self.idx = 0
         else:
             self.record_method = 'record_without_VNA'
             
@@ -138,6 +137,9 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         # Recording of the delta value.
         with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'a') as f:
             f.write(str(sigma) + '\n')
+           
+    def initialize_steps(self):
+        self.idx = 0
                   
     def off(self):
         """Set the device off.
@@ -224,8 +226,6 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
         
         if SM:
             self.meas_method = 'meas_with_SM'
-            # Iteration on the step number of the VNA.
-            self.idx = 0
         else:
             self.meas_method = 'meas_without_SM'
             self.meas_settings(self.settings['nb_step'], self.settings['f_start'], self.settings['f_stop'])
@@ -303,6 +303,9 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                     else:
                         f.write('\n')
         return 0
+    
+    def initialize_steps(self):
+        self.idx = 0
     
     def off(self):
         """Set the device off.
