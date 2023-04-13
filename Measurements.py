@@ -51,20 +51,12 @@ class SM(SM_SETTINGS, SM_COMMANDS):
                 f.write('Delta iSHE Voltage [V]\n')
 
             for i, val in enumerate(self.method_names):
-                print(val)
                 setattr(self, val, self.original_methods[i])
         else:
             for i, val in enumerate(self.method_names):
                 setattr(self, val, pass_device)
         
         self.box.setEnabled(False)
-        '''
-        # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
-        
-        # Attribute decorator for all methods.
-        for val in self.original_methods:
-            setattr(self, val, decorator(val))'''
  
     def connection(self, VNA=0):
         """Connection to the device.
