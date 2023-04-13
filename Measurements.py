@@ -375,7 +375,7 @@ class PS(PS_SETTINGS, PS_COMMANDS):
         Returns:
             float: Max current to apply.
         """
-        I_max_applied = max(abs(self.settings['I_start']), abs(self.settings['I_stop']))
+        I_max_applied = max(abs(float(self.settings['I_start'])), abs(float(self.settings['I_stop'])))
         # If a high current is considered, user chose to continue or not.
         if I_max_applied > self.I_high:
             msg = QMessageBox()
