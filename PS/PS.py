@@ -117,7 +117,7 @@ class COMMANDS:
         self.instr = importlib.import_module(path_device).PS()
         
         # An error is occured if the chosen current is higher than the possible one.
-        assert max(abs(self.settings['I_start']), abs(self.settings['I_stop'])) > self.instr.I_max, f"The supplied current is higher than the maximal one ($I = {self.instr.I_max} A$) supported by the device {self.settings['device']}."
+        assert max(abs(float(self.settings['I_start'])), abs(float(self.settings['I_stop']))) > self.instr.I_max, f"The supplied current is higher than the maximal one ($I = {self.instr.I_max} A$) supported by the device {self.settings['device']}."
         
         # Warning message.
         self.cooling_circuit_msg()

@@ -202,7 +202,6 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                         f.write(f'{s} Phase [rad]\n')
                     
             for i, val in enumerate(self.method_names):
-                print(val)
                 setattr(self, val, self.original_methods[i])
         else:
             for i, val in enumerate(self.method_names):
@@ -341,7 +340,6 @@ class PS(PS_SETTINGS, PS_COMMANDS):
                 f.write('Current [A]\n')
             
             for i, val in enumerate(self.method_names):
-                print(val)
                 setattr(self, val, self.original_methods[i])
         else:
             for i, val in enumerate(self.method_names):
@@ -447,7 +445,6 @@ class GM(GM_SETTINGS, GM_COMMANDS):
                 f.write('Magnetic Field [' + self.settings['unit'] + ']\n')
                 
             for i, val in enumerate(self.method_names):
-                print(val)
                 setattr(self, val, self.original_methods[i])
         else:
             for i, val in enumerate(self.method_names):
