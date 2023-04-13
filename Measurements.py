@@ -29,6 +29,7 @@ class SM(SM_SETTINGS, SM_COMMANDS):
         """
         # Obtain method names except __init__ and current method.
         self.method_names = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
+        self.original_methods = [getattr(self, name) for name in self.method_names]
         super().__init__()
 
     def file(self, path):
@@ -48,19 +49,20 @@ class SM(SM_SETTINGS, SM_COMMANDS):
             # Creating iSHE delta (error) iSHE voltage file.
             with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'w') as f:
                 f.write('Delta iSHE Voltage [V]\n')
-            
-            decorator = active_device
+            for i, val in enumerate(self.method_names):
+                setattr(self, val, self.original_methods[i])
         else:
-            decorator = pass_device
+            for i, val in enumerate(self.method_names):
+                setattr(self, val, pass_device)
         
         self.box.setEnabled(False)
-        
+        '''
         # Obtain method names except __init__ and current method.
         methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
         
         # Attribute decorator for all methods.
         for val in self.original_methods:
-            setattr(self, val, decorator(val))
+            setattr(self, val, decorator(val))'''
  
     def connection(self, VNA=0):
         """Connection to the device.
@@ -494,17 +496,17 @@ class GM(GM_SETTINGS, GM_COMMANDS):
 
 
 # Decorators used in device classes.
-def pass_device(method):
+def pass_device():
     """The method is not used if the device is disabled.
 
     Args:
         method (method): Method not used.
     """
-    @functools.wraps(method)
-    def wrapped(*args, **kwargs):
+    '''@functools.wraps(method)'''
+    '''def wrapped(*args, **kwargs):
         print('nikey')
-        return 0
-    return wrapped
+        return 0'''
+    return 0
 
 def active_device(method):
     """The method is used if the device is enabled.
