@@ -45,7 +45,7 @@ class SM(SM_SETTINGS, SM_COMMANDS):
 
             # Creating iSHE delta (error) iSHE voltage file.
             with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'w') as f:
-                f.write('Detla iSHE Voltage [V]\n')
+                f.write('Delta iSHE Voltage [V]\n')
             
             decorator = active_device
         else:
@@ -124,6 +124,7 @@ class SM(SM_SETTINGS, SM_COMMANDS):
                 f.write(', ')
             else:
                 f.write('\n')
+        self.idx += 1
                 
     def record_without_VNA(self, V, sigma):
         """Measurement recording if VNA device is not used.
@@ -290,8 +291,6 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
             # Recording of the magnitude value.
             with open(os.path.join(path, 'Magnitude.txt'), 'a') as f:
                 s_list = getattr(self.instr, s)['Magnitude']
-                f.write(str(s_list[0]))
-                
                 for i, val in enumerate(s_list):
                     f.write(str(val))
                     if i < self.step - 1:
@@ -302,8 +301,6 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
             # Recording of the phase value.
             with open(os.path.join(path, 'Phase.txt'), 'a') as f:
                 s_list = getattr(self.instr, s)['Phase']
-                f.write(str(s_list[0]))
-                
                 for i, val in enumerate(s_list):
                     f.write(str(val))
                     if i < self.step - 1:
