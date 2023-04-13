@@ -49,7 +49,9 @@ class SM(SM_SETTINGS, SM_COMMANDS):
             # Creating iSHE delta (error) iSHE voltage file.
             with open(os.path.join(self.path, 'Delta_V-iSHE_values.txt'), 'w') as f:
                 f.write('Delta iSHE Voltage [V]\n')
+
             for i, val in enumerate(self.method_names):
+                print(val)
                 setattr(self, val, self.original_methods[i])
         else:
             for i, val in enumerate(self.method_names):
@@ -166,6 +168,8 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
     def __init__(self):
         """Initialize settings.
         """
+        self.method_names = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
+        self.original_methods = [getattr(self, name) for name in self.method_names]
         super().__init__()
 
     def file(self, path):
@@ -205,18 +209,14 @@ class VNA(VNA_SETTINGS, VNA_COMMANDS):
                 with open(os.path.join(path, 'Phase.txt'), 'w') as f:
                         f.write(f'{s} Phase [rad]\n')
                     
-            decorator = active_device
+            for i, val in enumerate(self.method_names):
+                print(val)
+                setattr(self, val, self.original_methods[i])
         else:
-            decorator = pass_device
+            for i, val in enumerate(self.method_names):
+                setattr(self, val, pass_device)
         
         self.box.setEnabled(False)
-        
-        # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
-        
-        # Attribute decorator for all methods.
-        for val in methods:
-            setattr(self, val, decorator(getattr(self, val)))
        
     def connection(self, SM=False):
         """Connection to the device.
@@ -330,6 +330,8 @@ class PS(PS_SETTINGS, PS_COMMANDS):
     def __init__(self):
         """Initialize settings.
         """
+        self.method_names = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
+        self.original_methods = [getattr(self, name) for name in self.method_names]
         super().__init__()
         
     def file(self, path):
@@ -346,18 +348,14 @@ class PS(PS_SETTINGS, PS_COMMANDS):
             with open(os.path.join(self.path, 'I_values.txt'), 'w') as f:
                 f.write('Current [A]\n')
             
-            decorator = active_device
+            for i, val in enumerate(self.method_names):
+                print(val)
+                setattr(self, val, self.original_methods[i])
         else:
-            decorator = pass_device
+            for i, val in enumerate(self.method_names):
+                setattr(self, val, pass_device)
         
         self.box.setEnabled(False)
-        
-        # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
-        
-        # Attribute decorator for all methods.
-        for val in methods:
-            setattr(self, val, decorator(getattr(self, val)))
         
     def connection(self):
         """Connection to the device
@@ -438,6 +436,8 @@ class GM(GM_SETTINGS, GM_COMMANDS):
     def __init__(self):
         """Initialize settings.
         """
+        self.method_names = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
+        self.original_methods = [getattr(self, name) for name in self.method_names]
         super().__init__()
 
     def file(self, path):
@@ -454,19 +454,14 @@ class GM(GM_SETTINGS, GM_COMMANDS):
             with open(os.path.join(self.path, 'H_values.txt'), 'w') as f:
                 f.write('Magnetic Field [' + self.settings['unit'] + ']\n')
                 
-            decorator = active_device
+            for i, val in enumerate(self.method_names):
+                print(val)
+                setattr(self, val, self.original_methods[i])
         else:
-            
-            decorator = pass_device
+            for i, val in enumerate(self.method_names):
+                setattr(self, val, pass_device)
         
         self.box.setEnabled(False)
-        
-        # Obtain method names except __init__ and current method.
-        methods = [name for name in dir(self) if callable(getattr(self, name)) and not name.startswith('__') and not name == 'file' and not name == 'off']
-        
-        # Attribute decorator for all methods.
-        for val in methods:
-            setattr(self, val, decorator(getattr(self, val)))
         
     def connection(self):
         """Connection to the device
@@ -495,26 +490,6 @@ class GM(GM_SETTINGS, GM_COMMANDS):
         self.box.setEnabled(True)
 
 
-# Decorators used in device classes.
-def pass_device():
-    """The method is not used if the device is disabled.
-
-    Args:
-        method (method): Method not used.
-    """
-    '''@functools.wraps(method)'''
-    '''def wrapped(*args, **kwargs):
-        print('nikey')
-        return 0'''
+# Empty function if the device hasn't to be used.
+def pass_device(*args):
     return 0
-
-def active_device(method):
-    """The method is used if the device is enabled.
-
-    Args:
-        method (method): Method used.
-    """
-    @functools.wraps(method)
-    def wrapped(*args, **kwargs):
-        return method(*args, **kwargs)
-    return wrapped
