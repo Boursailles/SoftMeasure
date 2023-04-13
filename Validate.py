@@ -159,10 +159,10 @@ class Valid:
         self.meas.signal_exception.connect(self.error_handler)
         
         # Plot GUI and signals for plots.
-        self.measurement_plot = Plot(self.devices) # Plot window creation.
+        """self.measurement_plot = Plot(self.devices) # Plot window creation.
         self.meas.create_traces.connect(self.measurement_plot.create_traces)
         self.meas.update_traces.connect(self.measurement_plot.update_traces)
-        self.meas.update_surfaces.connect(self.measurement_plot.update_surfaces)
+        self.meas.update_surfaces.connect(self.measurement_plot.update_surfaces)"""
 
         # Launch measurement and progressbar.
         self.meas_thread.start()
