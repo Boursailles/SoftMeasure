@@ -150,7 +150,7 @@ class PS:
 if __name__ == '__main__':
     try:
         rm = visa.ResourceManager()
-        D9700 = PS(rm)
+        D9700 = PS()
         D9700.off()
     except Exception as e:
         print("Exception ({}): {}".format(type(e), str(e)))

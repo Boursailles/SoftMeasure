@@ -1,2 +1,2 @@
 device	starting_frequency	ending_frequency	step_number	IFBW	power
-1	4.0	5.5	11	1.0	0.0
+1	4.0	5.5	601	1.0	6.0

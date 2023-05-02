@@ -38,7 +38,7 @@ class GM(object):
             Number linked to the magnetic field unit (donner les valeurs)
         """
 
-        self.gm.write('UNIT ' + str(unit+1))
+        self.gm.write('UNIT ' + str(int(unit)+1))
 
 
     def read_mag_field(self):
@@ -47,6 +47,7 @@ class GM(object):
         """
 
         self.mag_value = self.gm.query("RDGFIELD?")[:-1]
+        print(self.mag_value, type(self.mag_value))
 
         
         

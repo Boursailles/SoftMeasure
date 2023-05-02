@@ -473,7 +473,7 @@ class GM(GM_SETTINGS, GM_COMMANDS):
 
         # Recording of the static magnetic field value.
         with open(os.path.join(self.path, 'H_values.txt'), 'a') as f:
-            f.write(str(H) + '\n')
+            f.write(H + '\n')
             
     def off(self):
         """Set the device off.
