@@ -18,7 +18,6 @@ class GM(object):
         """
 
         self.gm = None
-        self.mag_value = None
 
         # Setup PyVISA instrument
         rm = visa.ResourceManager()
@@ -46,8 +45,8 @@ class GM(object):
         Recording of magnetic field in the variable self.mag_value.
         """
 
-        self.mag_value = self.gm.query("RDGFIELD?")[:-1]
-        print(self.mag_value, type(self.mag_value))
+        value = self.gm.query("RDGFIELD?")[:-1]
+        return value
 
         
         
