@@ -54,8 +54,7 @@ class VNA:
         self.IFBW = IFBW
         self.power = power
 
-        
-        #self.vna.write("*RST")
+    
         
         # If VNA takes more than 2 min to answer, something's wrong
         self.vna.timeout = 2 * 60 * 1e3
@@ -188,7 +187,3 @@ class VNA:
         self.S12 = {'Magnitude': s12_dB, 'Phase': s12_phase}
         self.S21 = {'Magnitude': s21_dB, 'Phase': s21_phase}
         self.S22 = {'Magnitude': s22_dB, 'Phase': s22_phase}
-
-
-    def reset(self):
-        self.vna.write("*RST")
