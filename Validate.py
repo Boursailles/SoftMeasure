@@ -96,7 +96,6 @@ class Valid:
     def okay_event(self):
         """Event method when the "okay" button is clicked.
         """
-        print('wow')
         self.path = self.save.pathEdit.text()
 
         self.save_params()
