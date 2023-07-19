@@ -1,2 +1,2 @@
 device	starting_current	ending_current	step_number
-0	4.4	8.1	1001
+0	1	2	3
